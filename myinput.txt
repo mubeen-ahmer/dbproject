@@ -1,0 +1,529 @@
+
+
+
+
+
+----End of file-----
+
+CREATE OR REPLACE VIEW v_order_pool AS
+SELECT
+    o.uuid              AS order_id,
+    o.title,
+    o.pages,
+    o.minimum_price,
+    o.deadline_offered,
+    o.academic_level,
+    o.citation_style,
+    o.created_at,
+    sub.name            AS subject_name,
+    srv.name            AS service_name,
+    u.name              AS student_name,
+    (SELECT COUNT(*) FROM bid b WHERE b.order_id = o.uuid) AS bid_count
+FROM orders o
+JOIN subject sub ON sub.uuid = o.subject_id
+JOIN service srv ON srv.uuid = o.service_id
+JOIN users u     ON u.uuid = o.student_id
+WHERE o.status IN ('OPEN', 'BIDDING');
+
+
+CREATE OR REPLACE VIEW v_writer_leaderboard AS
+SELECT
+    u.uuid              AS writer_id,
+    u.name,
+    u.point,
+    u.created_at,
+    w.status,
+    CASE
+        WHEN u.point >= 1000 THEN 'Elite'
+        WHEN u.point >=  600 THEN 'Platinum'
+        WHEN u.point >=  300 THEN 'Gold'
+        WHEN u.point >=  100 THEN 'Silver'
+        ELSE 'Bronze'
+    END AS tier,
+    CASE
+        WHEN CURRENT_TIMESTAMP - u.created_at >= INTERVAL '365 days' THEN 'Veteran'
+        WHEN CURRENT_TIMESTAMP - u.created_at >= INTERVAL '180 days' THEN 'Half Year'
+        WHEN CURRENT_TIMESTAMP - u.created_at >=  INTERVAL '90 days' THEN 'Quarterly'
+        WHEN CURRENT_TIMESTAMP - u.created_at >=  INTERVAL '30 days' THEN '1 Month'
+        ELSE 'New'
+    END AS tenure_badge,
+    (SELECT COUNT(*) FROM orders WHERE writer_id = u.uuid AND status = 'COMPLETED') AS completed_orders,
+    (SELECT AVG(rating)::NUMERIC(3,2) FROM review r
+        JOIN orders o ON o.uuid = r.order_id
+        WHERE o.writer_id = u.uuid) AS avg_rating
+FROM users u
+JOIN writer w ON w.id = u.uuid
+WHERE u.role = 'writer' AND w.status = 'APPROVED'
+ORDER BY u.point DESC;
+
+CREATE OR REPLACE VIEW v_user_orders AS
+SELECT
+    o.uuid              AS order_id,
+    o.title,
+    o.status,
+    o.selected_price,
+    o.created_at,
+    o.student_id,
+    o.writer_id,
+    stu.name            AS student_name,
+    wri.name            AS writer_name,
+    sub.name            AS subject_name,
+    srv.name            AS service_name
+FROM orders o
+JOIN users stu   ON stu.uuid = o.student_id
+LEFT JOIN users wri   ON wri.uuid = o.writer_id
+JOIN subject sub ON sub.uuid = o.subject_id
+JOIN service srv ON srv.uuid = o.service_id;
+
+
+
+CREATE OR REPLACE VIEW v_writer_profile AS
+SELECT
+    u.uuid              AS writer_id,
+    u.name,
+    u.point,
+    w.qualification,
+    w.bio,
+    (SELECT COUNT(*) FROM orders WHERE writer_id = u.uuid AND status = 'COMPLETED') AS completed_orders,
+    (SELECT AVG(rating)::NUMERIC(3,2) FROM review r
+        JOIN orders o ON o.uuid = r.order_id
+        WHERE o.writer_id = u.uuid) AS avg_rating,
+    (SELECT ARRAY_AGG(s.name) FROM writer_subject ws
+        JOIN subject s ON s.uuid = ws.subject_id
+        WHERE ws.writer_id = u.uuid) AS subjects,
+    (SELECT ARRAY_AGG(s.name) FROM writer_service wsv
+        JOIN service s ON s.uuid = wsv.service_id
+        WHERE wsv.writer_id = u.uuid) AS services
+FROM users u
+JOIN writer w ON w.id = u.uuid
+WHERE u.role = 'writer' AND w.status = 'APPROVED';
+
+
+
+CREATE OR REPLACE PROCEDURE sp_submit_paper(
+    p_order_id              UUID,
+    p_file_path             VARCHAR,
+    p_watermarked_path      VARCHAR
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_count INTEGER;
+BEGIN
+    -- Get next submission number for this order
+    SELECT COALESCE(MAX(count), 0) + 1 INTO v_count
+    FROM submission WHERE order_id = p_order_id;
+
+    -- Insert submission
+    INSERT INTO submission (order_id, count, file_path, watermarked_file_path)
+    VALUES (p_order_id, v_count, p_file_path, p_watermarked_path);
+
+    -- Update order status
+    UPDATE orders
+    SET status = 'SUBMITTED'
+    WHERE uuid = p_order_id;
+END;
+$$;
+
+
+
+CREATE OR REPLACE PROCEDURE sp_accept_paper(
+    p_order_id UUID
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_price NUMERIC(10,2);
+BEGIN
+    -- Get the paid price
+    SELECT selected_price INTO v_price
+    FROM orders WHERE uuid = p_order_id;
+
+    -- Update order status
+    UPDATE orders SET status = 'COMPLETED' WHERE uuid = p_order_id;
+
+    -- Update latest submission to ACCEPTED
+    UPDATE submission
+    SET status = 'ACCEPTED'
+    WHERE order_id = p_order_id
+      AND count = (SELECT MAX(count) FROM submission WHERE order_id = p_order_id);
+
+    -- Record transaction release (platform takes 10% commission)
+    INSERT INTO transactions (order_id, status, amount, release_date)
+    VALUES (p_order_id, 'RELEASED_TO_WRITER', v_price * 0.90, CURRENT_TIMESTAMP);
+END;
+$$;
+
+
+-- Procedure 3 — Request Revision
+CREATE OR REPLACE PROCEDURE sp_request_revision(
+    p_order_id      UUID,
+    p_submission_id UUID,
+    p_changes       TEXT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_revision_count INTEGER;
+BEGIN
+    -- Check max 3 revisions rule
+    SELECT COUNT(*) INTO v_revision_count
+    FROM revision WHERE order_id = p_order_id;
+
+    IF v_revision_count >= 3 THEN
+        RAISE EXCEPTION 'Maximum 3 revisions reached for this order';
+    END IF;
+
+    -- Insert revision request
+    INSERT INTO revision (submission_id, order_id, changes)
+    VALUES (p_submission_id, p_order_id, p_changes);
+
+    -- Mark the submission as needing revision
+    UPDATE submission
+    SET status = 'REVISION_REQUESTED'
+    WHERE uuid = p_submission_id;
+
+    -- Update order status
+    UPDATE orders
+    SET status = 'REVISION_REQUESTED'
+    WHERE uuid = p_order_id;
+END;
+$$;
+
+
+-- Procedure 4 — Request Refund (70/25/5 split)
+CREATE OR REPLACE PROCEDURE sp_request_refund(
+    p_order_id UUID
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_price NUMERIC(10,2);
+BEGIN
+    -- Get selected price
+    SELECT selected_price INTO v_price
+    FROM orders WHERE uuid = p_order_id;
+
+    IF v_price IS NULL THEN
+        RAISE EXCEPTION 'Cannot refund an order with no selected price';
+    END IF;
+
+    -- Update order status
+    UPDATE orders SET status = 'REFUNDED' WHERE uuid = p_order_id;
+
+    -- Log the split as 3 transaction rows (student / writer / platform)
+    INSERT INTO transactions (order_id, status, amount, release_date)
+    VALUES
+        (p_order_id, 'REFUNDED',            v_price * 0.70, CURRENT_TIMESTAMP),  -- student gets 70%
+        (p_order_id, 'RELEASED_TO_WRITER',  v_price * 0.25, CURRENT_TIMESTAMP),  -- writer gets 25%
+        (p_order_id, 'SPLIT',               v_price * 0.05, CURRENT_TIMESTAMP);  -- platform keeps 5%
+END;
+$$;
+
+
+-- Procedure 5 — Place Bid
+CREATE OR REPLACE PROCEDURE sp_place_bid(
+    p_order_id   UUID,
+    p_writer_id  UUID,
+    p_price      NUMERIC,
+    p_deadline   TIMESTAMP
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_min_price    NUMERIC(10,2);
+    v_order_status VARCHAR(30);
+BEGIN
+    -- Get order's minimum price and current status
+    SELECT minimum_price, status
+    INTO v_min_price, v_order_status
+    FROM orders WHERE uuid = p_order_id;
+
+    -- Validate order is open for bidding
+    IF v_order_status NOT IN ('OPEN', 'BIDDING') THEN
+        RAISE EXCEPTION 'Order is not accepting bids (current status: %)', v_order_status;
+    END IF;
+
+    -- Validate bid amount
+    IF p_price < v_min_price THEN
+        RAISE EXCEPTION 'Bid price (%) is below minimum price (%)', p_price, v_min_price;
+    END IF;
+
+    -- Insert the bid
+    INSERT INTO bid (order_id, writer_id, offered_price, offered_deadline)
+    VALUES (p_order_id, p_writer_id, p_price, p_deadline);
+
+    -- Move order to BIDDING if it was still OPEN
+    IF v_order_status = 'OPEN' THEN
+        UPDATE orders SET status = 'BIDDING' WHERE uuid = p_order_id;
+    END IF;
+END;
+$$;
+
+
+CREATE OR REPLACE FUNCTION fn_bid_accepted()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.status = 'ACCEPTED' AND (OLD.status IS DISTINCT FROM 'ACCEPTED') THEN
+        UPDATE orders
+        SET writer_id       = NEW.writer_id,
+            accepted_bid_id = NEW.uuid,
+            selected_price  = NEW.offered_price,
+            status          = 'ASSIGNED'
+        WHERE uuid = NEW.order_id;
+
+        -- Reject all other bids for the same order
+        UPDATE bid
+        SET status = 'REJECTED'
+        WHERE order_id = NEW.order_id AND uuid <> NEW.uuid AND status = 'PENDING';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_bid_accepted
+AFTER UPDATE ON bid
+FOR EACH ROW
+EXECUTE FUNCTION fn_bid_accepted();
+
+
+CREATE OR REPLACE FUNCTION fn_block_review_on_refund()
+RETURNS TRIGGER AS $$
+DECLARE
+    order_status VARCHAR(30);
+BEGIN
+    SELECT status INTO order_status FROM orders WHERE uuid = NEW.order_id;
+
+    IF order_status = 'REFUNDED' THEN
+        RAISE EXCEPTION 'Cannot review a refunded order';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_block_review_on_refund
+BEFORE INSERT ON review
+FOR EACH ROW
+EXECUTE FUNCTION fn_block_review_on_refund();
+
+
+
+
+CREATE OR REPLACE FUNCTION fn_calc_minimum_price()
+RETURNS TRIGGER AS $$
+DECLARE
+    first_rate NUMERIC(10,2);
+    extra_rate NUMERIC(10,2);
+BEGIN
+    SELECT price_of_first_page, price_of_additional_page
+    INTO first_rate, extra_rate
+    FROM service WHERE uuid = NEW.service_id;
+
+    NEW.minimum_price := first_rate + (extra_rate * (NEW.pages - 1));
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_calc_minimum_price
+BEFORE INSERT ON orders
+FOR EACH ROW
+EXECUTE FUNCTION fn_calc_minimum_price();
+
+
+
+CREATE OR REPLACE FUNCTION fn_review_points()
+RETURNS TRIGGER AS $$
+DECLARE
+    target_user UUID;
+BEGIN
+    -- Find the OTHER user in this order (not the reviewer)
+    SELECT CASE
+        WHEN NEW.reviewer_id = o.student_id THEN o.writer_id
+        ELSE o.student_id
+    END INTO target_user
+    FROM orders o WHERE o.uuid = NEW.order_id;
+
+    -- Add points: rating × 10 (so 5 stars = 50 points)
+    UPDATE users SET point = point + (NEW.rating * 10)
+    WHERE uuid = target_user;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_review_points
+AFTER INSERT ON review
+FOR EACH ROW
+EXECUTE FUNCTION fn_review_points();
+
+
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+ALTER TABLE users         ALTER COLUMN uuid SET DEFAULT gen_random_uuid();
+ALTER TABLE subject       ALTER COLUMN uuid SET DEFAULT gen_random_uuid();
+ALTER TABLE service       ALTER COLUMN uuid SET DEFAULT gen_random_uuid();
+ALTER TABLE orders        ALTER COLUMN uuid SET DEFAULT gen_random_uuid();
+ALTER TABLE bid           ALTER COLUMN uuid SET DEFAULT gen_random_uuid();
+ALTER TABLE submission    ALTER COLUMN uuid SET DEFAULT gen_random_uuid();
+ALTER TABLE revision      ALTER COLUMN uuid SET DEFAULT gen_random_uuid();
+ALTER TABLE transactions  ALTER COLUMN uuid SET DEFAULT gen_random_uuid();
+ALTER TABLE chat          ALTER COLUMN uuid SET DEFAULT gen_random_uuid();
+ALTER TABLE review        ALTER COLUMN uuid SET DEFAULT gen_random_uuid();
+ALTER TABLE notification  ALTER COLUMN uuid SET DEFAULT gen_random_uuid();
+
+
+
+CREATE TABLE users (
+    uuid         UUID PRIMARY KEY,
+    name         VARCHAR(100) NOT NULL,
+    email        VARCHAR(255) NOT NULL UNIQUE,
+    role         VARCHAR(20)  NOT NULL CHECK (role IN ('student', 'writer', 'admin')),
+    point        INTEGER      NOT NULL DEFAULT 0 CHECK (point >= 0),
+    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE writer (
+    id UUID PRIMARY KEY REFERENCES users(uuid),
+    qualification   VARCHAR(150) NOT NULL,
+    bio         VARCHAR(500) NOT NULL,
+    status      VARCHAR(20) NOT NULL DEFAULT 'PENDING_APPROVAL' CHECK (status in ('PENDING_APPROVAL', 'APPROVED', 'REJECTED'))
+);
+
+CREATE TABLE SUBJECT (
+    uuid        uuid PRIMARY KEY,
+    name        VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE SERVICE (
+    uuid        uuid PRIMARY KEY,
+    name        VARCHAR(50) NOT NULL UNIQUE,
+    price_of_first_page         NUMERIC(10,2) NOT NULL CHECK (price_of_first_page > 0),
+    price_of_additional_page    NUMERIC(10,2)  NOT NULL CHECK (price_of_additional_page > 0)
+);
+
+-- Junction: writer ↔ subject (many-to-many)
+CREATE TABLE writer_subject (
+    writer_id   UUID NOT NULL REFERENCES writer(id) ON DELETE CASCADE,
+    subject_id  UUID NOT NULL REFERENCES subject(uuid) ON DELETE CASCADE,
+    PRIMARY KEY (writer_id, subject_id)
+);
+
+-- Junction: writer ↔ service (many-to-many)
+CREATE TABLE writer_service (
+    writer_id   UUID NOT NULL REFERENCES writer(id) ON DELETE CASCADE,
+    service_id  UUID NOT NULL REFERENCES service(uuid) ON DELETE CASCADE,
+    PRIMARY KEY (writer_id, service_id)
+);
+
+CREATE TABLE orders (
+    uuid                UUID PRIMARY KEY,
+    student_id          UUID NOT NULL REFERENCES users(uuid),
+    writer_id           UUID REFERENCES writer(id),
+    accepted_bid_id     UUID,
+    subject_id          UUID NOT NULL REFERENCES subject(uuid),
+    service_id          UUID NOT NULL REFERENCES service(uuid),
+    title               VARCHAR(200) NOT NULL,
+    additional_info     TEXT,
+    file_path           VARCHAR(500),
+    pages               INTEGER NOT NULL CHECK (pages > 0),
+    minimum_price       NUMERIC(10,2) NOT NULL CHECK (minimum_price > 0),
+    selected_price      NUMERIC(10,2) CHECK (selected_price >= minimum_price),
+    deadline_offered    TIMESTAMP NOT NULL,
+    academic_level      VARCHAR(30) NOT NULL CHECK (academic_level IN ('HIGH_SCHOOL', 'UNDERGRADUATE', 'MASTERS', 'PHD')),
+    citation_style      VARCHAR(20) CHECK (citation_style IN ('APA', 'MLA', 'HARVARD', 'CHICAGO', 'NONE')),
+    status              VARCHAR(30) NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'BIDDING', 'ASSIGNED', 'IN_PROGRESS', 'SUBMITTED', 'UNDER_REVIEW', 'REVISION_REQUESTED', 'COMPLETED', 'DISPUTED', 'CANCELLED', 'REFUNDED')),
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE bid (
+    uuid                UUID PRIMARY KEY,
+    order_id            UUID NOT NULL REFERENCES orders(uuid) ON DELETE CASCADE,
+    writer_id           UUID NOT NULL REFERENCES writer(id),
+    offered_price       NUMERIC(10,2) NOT NULL CHECK (offered_price > 0),
+    offered_deadline    TIMESTAMP NOT NULL,
+    status              VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'WITHDRAWN')),
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (order_id, writer_id)
+);
+
+-- Now add the FK from orders.accepted_bid_id (circular, so added after bid exists)
+ALTER TABLE orders ADD CONSTRAINT fk_accepted_bid
+    FOREIGN KEY (accepted_bid_id) REFERENCES bid(uuid);
+
+CREATE TABLE submission (
+    uuid                    UUID PRIMARY KEY,
+    order_id                UUID NOT NULL REFERENCES orders(uuid) ON DELETE CASCADE,
+    count                   INTEGER NOT NULL CHECK (count > 0),
+    file_path               VARCHAR(500) NOT NULL,
+    watermarked_file_path   VARCHAR(500) NOT NULL,
+    status                  VARCHAR(30) NOT NULL DEFAULT 'PENDING_REVIEW' CHECK (status IN ('PENDING_REVIEW', 'ACCEPTED', 'REVISION_REQUESTED')),
+    created_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (order_id, count)
+);
+
+CREATE TABLE revision (
+    uuid            UUID PRIMARY KEY,
+    submission_id   UUID NOT NULL REFERENCES submission(uuid) ON DELETE CASCADE,
+    order_id        UUID NOT NULL REFERENCES orders(uuid) ON DELETE CASCADE,
+    changes         TEXT NOT NULL CHECK (LENGTH(changes) >= 50),
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE transactions (
+    uuid            UUID PRIMARY KEY,
+    order_id        UUID NOT NULL REFERENCES orders(uuid) ON DELETE CASCADE,
+    status          VARCHAR(20) NOT NULL CHECK (status IN ('HELD', 'RELEASED_TO_WRITER', 'REFUNDED', 'SPLIT')),
+    amount          NUMERIC(10,2) NOT NULL CHECK (amount > 0),
+    received_date   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    release_date    TIMESTAMP
+);
+
+CREATE TABLE chat (
+    uuid        UUID PRIMARY KEY,
+    order_id    UUID NOT NULL REFERENCES orders(uuid) ON DELETE CASCADE,
+    sender_id   UUID NOT NULL REFERENCES users(uuid),
+    text        TEXT NOT NULL,
+    time        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at     TIMESTAMP
+);
+
+CREATE TABLE review (
+    uuid        UUID PRIMARY KEY,
+    order_id    UUID NOT NULL REFERENCES orders(uuid) ON DELETE CASCADE,
+    reviewer_id UUID NOT NULL REFERENCES users(uuid),
+    rating      INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    text        TEXT,
+    time        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (order_id, reviewer_id)
+);
+
+CREATE TABLE notification (
+    uuid        UUID PRIMARY KEY,
+    user_id     UUID NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+    order_id    UUID REFERENCES orders(uuid) ON DELETE CASCADE,
+    type        VARCHAR(50) NOT NULL,
+    text        TEXT NOT NULL,
+    read_at     TIMESTAMP,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+
+USER (uuid (pk,fk->auth.user_id) ,name,created_at,email,role,point)
+WRITER ( id (pk,fk->USER.uuid), qualification , bio ,status)
+WRITER_SUBJECT (writer_id (fk->USER.uuid) , subject_id(fk->SUBJECT.uuid),PK(writer_id, subject_id))
+WRITER_SERVICE (writer_id (fk->USER.uuid) , service_id(fk->SERVICE.uuid),PK(writer_id, service_id))
+SUBJECT (uuid (pk) , name )
+SERVICE (uuid (pk) , name , price_of_first_page , price_of_additional_page )
+ORDER ( uuid (pk) , student_id(fk->USER.uuid), writer_id(fk->WRITER.id (selced writer)) , minimum_price,selected_price , deadline_offered(by student), subject_id(fk->SUBJECT.uuid),service_id(fk->SERVICE.uuid) , pages,title,additional_info,file_path,status,academic_level,citation_style,accepted_bid_id, created_at)
+BID (uuid(pk), order_id (fk->ORDER.uuid)  , writer_id(fk->WRITER.id ) , offered_price(by writer) , offered_deadline(by writer) ,status)
+SUBMISSION (uuid(pk) , order_id(fk), count, file_path , status,watermarked_file_path,created_at  )
+REVISION ( uuid,submission_id (fk->SUBMISSION.uuid) ,order_id,  changes ( student tell the changes needed ),created_at)
+TRANSACTION (uuid(pk),order_id(fk), status,amount,recieved_date,release_Date)
+CHAT(uuid,sender_id,time,read_at,text,order_id)
+REVIEW (uuid,order_id(fk),time,text,rating,reviewer_id)
+NOTIFICATION ( uuid, user_id, order_id, created_at,read_at,text,type)
