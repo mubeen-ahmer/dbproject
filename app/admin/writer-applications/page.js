@@ -20,7 +20,7 @@ export default async function WriterApplicationsPage() {
        w.bio,
        au.name,
        au.email,
-       au."createdAt" AS created_at,
+       au."created_at" AS created_at,
        (
          SELECT COALESCE(array_agg(s.name ORDER BY s.name), '{}')
          FROM writer_subject ws
@@ -34,9 +34,9 @@ export default async function WriterApplicationsPage() {
          WHERE wsv.writer_id = w.id
        ) AS services
      FROM writer w
-     JOIN neon_auth."user" au ON au.id = w.id
+     JOIN users au ON au.uuid = w.id
      WHERE w.status = 'PENDING_APPROVAL'
-     ORDER BY au."createdAt" DESC`
+     ORDER BY au.created_at DESC`
   );
 
   const applications = result.rows;

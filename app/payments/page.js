@@ -31,8 +31,8 @@ export default async function PaymentsPage() {
               wr_user.name AS writer_name
        FROM transactions t
        JOIN orders o ON o.uuid = t.order_id
-       JOIN neon_auth."user" stu ON stu.id = o.student_id
-       LEFT JOIN neon_auth."user" wr_user ON wr_user.id = o.writer_id
+       JOIN users stu ON stu.uuid = o.student_id
+       LEFT JOIN users wr_user ON wr_user.uuid = o.writer_id
        ORDER BY t.received_date DESC`
     );
     transactions = res.rows;
@@ -49,7 +49,7 @@ export default async function PaymentsPage() {
               stu.name AS student_name
        FROM transactions t
        JOIN orders o ON o.uuid = t.order_id
-       JOIN neon_auth."user" stu ON stu.id = o.student_id
+       JOIN users stu ON stu.uuid = o.student_id
        WHERE o.writer_id = $1 AND t.status = 'RELEASED_TO_WRITER'
        ORDER BY t.received_date DESC`,
       [user.uuid]

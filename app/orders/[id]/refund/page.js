@@ -26,7 +26,7 @@ export default async function RefundPage({ params }) {
       `SELECT o.uuid, o.title, o.status, o.student_id, o.selected_price,
               wr_user.name AS writer_name
        FROM orders o
-       LEFT JOIN neon_auth."user" wr_user ON wr_user.id = o.writer_id
+       LEFT JOIN users wr_user ON wr_user.uuid = o.writer_id
        WHERE o.uuid = $1`,
       [id]
     ),

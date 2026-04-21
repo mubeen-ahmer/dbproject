@@ -216,7 +216,7 @@ Every user has two computed badges displayed via `<UserBadges />`:
 | 600–999 | Platinum |
 | 1000+ | Elite |
 
-**Tenure** — from `neon_auth."user"."createdAt"`:
+**Tenure** — from `neon_auth."user"."created_at"`:
 | Age | Label |
 |---|---|
 | 0–29 days | New |

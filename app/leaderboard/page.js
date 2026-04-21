@@ -54,7 +54,7 @@ export default async function LeaderboardPage() {
                   <td className="px-4 py-3 text-gray-500">#{i + 1}</td>
                   <td className="px-4 py-3 font-semibold">{r.name}</td>
                   <td className="px-4 py-3">
-                    <UserBadges points={r.point} createdAt={r.created_at} />
+                    <UserBadges points={r.point} created_at={r.created_at} />
                   </td>
                   <td className="px-4 py-3 text-right">{r.point}</td>
                   <td className="px-4 py-3 text-right text-gray-400">{r.completed_orders}</td>

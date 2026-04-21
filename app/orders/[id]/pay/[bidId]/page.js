@@ -21,7 +21,7 @@ export default async function PaymentPage({ params }) {
        wr_user.name AS writer_name
      FROM bid b
      JOIN orders o ON o.uuid = b.order_id
-     JOIN neon_auth."user" wr_user ON wr_user.id = b.writer_id
+     JOIN users wr_user ON wr_user.uuid = b.writer_id
      WHERE b.uuid = $1 AND o.uuid = $2`,
     [bidId, id]
   );

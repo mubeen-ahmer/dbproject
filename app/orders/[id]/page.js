@@ -6,6 +6,17 @@ import OrderStatusBadge from '@/components/OrderStatusBadge';
 import UserBadges from '@/components/UserBadges';
 import { acceptPaper } from './review/actions';
 import ReviewForm from './ReviewForm';
+import { getAdminSupabase } from '@/lib/supabase/admin';
+
+const BUCKET = 'submissions';
+
+async function signedUrl(path) {
+  if (!path || path.startsWith('/stub')) return null;
+  const { data } = await getAdminSupabase()
+    .storage.from(BUCKET)
+    .createSignedUrl(path, 120);
+  return data?.signedUrl ?? null;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -28,8 +39,8 @@ export default async function OrderDetailPage({ params }) {
      FROM orders o
      JOIN subject s ON s.uuid = o.subject_id
      JOIN service sv ON sv.uuid = o.service_id
-     JOIN neon_auth."user" stu ON stu.id = o.student_id
-     LEFT JOIN neon_auth."user" wr_user ON wr_user.id = o.writer_id
+     JOIN users stu ON stu.uuid = o.student_id
+     LEFT JOIN users wr_user ON wr_user.uuid = o.writer_id
      WHERE o.uuid = $1`,
     [id]
   );
@@ -47,11 +58,10 @@ export default async function OrderDetailPage({ params }) {
   const [bidsRes, subsRes, revsRes, reviewsRes] = await Promise.all([
     pool.query(
       `SELECT b.uuid, b.offered_price, b.offered_deadline, b.status, b.created_at,
-              b.writer_id, wr_user.name AS writer_name, u.point AS writer_points,
-              wr_user."createdAt" AS writer_joined
+              b.writer_id, u.name AS writer_name, u.point AS writer_points,
+              u.created_at AS writer_joined
        FROM bid b
        JOIN users u ON u.uuid = b.writer_id
-       JOIN neon_auth."user" wr_user ON wr_user.id = b.writer_id
        WHERE b.order_id = $1
        ORDER BY b.created_at DESC`,
       [id]
@@ -70,7 +80,7 @@ export default async function OrderDetailPage({ params }) {
       `SELECT r.uuid, r.reviewer_id, r.rating, r.text, r.time,
               au.name AS reviewer_name
        FROM review r
-       JOIN neon_auth."user" au ON au.id = r.reviewer_id
+       JOIN users au ON au.uuid = r.reviewer_id
        WHERE r.order_id = $1
        ORDER BY r.time DESC`,
       [id]
@@ -78,9 +88,17 @@ export default async function OrderDetailPage({ params }) {
   ]);
 
   const bids = bidsRes.rows;
-  const submissions = subsRes.rows;
   const revisions = revsRes.rows;
   const reviews = reviewsRes.rows;
+
+  // Attach signed URLs to each submission (2-min expiry, generated server-side)
+  const submissions = await Promise.all(
+    subsRes.rows.map(async (s) => ({
+      ...s,
+      watermarked_url: await signedUrl(s.watermarked_file_path),
+      original_url: await signedUrl(s.file_path),
+    }))
+  );
 
   const myBid = isWriter ? bids.find((b) => b.writer_id === user.uuid) : null;
   const latestSubmission = submissions[0];
@@ -101,6 +119,12 @@ export default async function OrderDetailPage({ params }) {
     isStudent && REFUNDABLE.includes(order.status) && order.selected_price &&
     submissions.length < 3;
 
+  const DISPUTABLE = ['SUBMITTED', 'REVISION_REQUESTED', 'ASSIGNED', 'IN_PROGRESS'];
+  const canDispute =
+    (isStudent || isAssignedWriter) &&
+    DISPUTABLE.includes(order.status) &&
+    order.selected_price;
+
   const currentUserReviewed = reviews.some((r) => r.reviewer_id === user.uuid);
   const canLeaveReview =
     order.status === 'COMPLETED' &&
@@ -108,11 +132,23 @@ export default async function OrderDetailPage({ params }) {
     !currentUserReviewed;
   const reviewTargetName = isStudent ? order.writer_name : order.student_name;
 
+  const canChat = isStudent || isAssignedWriter || isAdmin;
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
-      <Link href={dashboardPath} className="text-indigo-400 hover:underline text-sm">
-        ← Dashboard
-      </Link>
+      <div className="flex justify-between items-center mb-1">
+        <Link href={dashboardPath} className="text-indigo-400 hover:underline text-sm">
+          ← Dashboard
+        </Link>
+        {canChat && (
+          <Link
+            href={`/orders/${order.uuid}/chat`}
+            className="text-sm bg-white/5 border border-white/10 px-3 py-1 rounded hover:bg-white/10"
+          >
+            💬 Chat
+          </Link>
+        )}
+      </div>
 
       <div className="flex justify-between items-start mt-2 mb-6">
         <div>
@@ -191,7 +227,18 @@ export default async function OrderDetailPage({ params }) {
             Writer submitted work — review it
           </div>
           <div className="text-xs text-gray-400 mb-3">
-            Watermarked preview: <span className="font-mono">{latestSubmission.watermarked_file_path}</span>
+            {latestSubmission.watermarked_url ? (
+              <a
+                href={latestSubmission.watermarked_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-indigo-400 hover:underline"
+              >
+                View watermarked preview ↗
+              </a>
+            ) : (
+              <span className="font-mono">{latestSubmission.watermarked_file_path}</span>
+            )}
           </div>
           <div className="flex gap-2">
             <form action={acceptPaper}>
@@ -250,6 +297,25 @@ export default async function OrderDetailPage({ params }) {
       {isStudent && submissions.length >= 3 && REFUNDABLE.includes(order.status) && (
         <div className="mb-6 text-xs text-gray-500">
           Refund locked after 3 submissions — accept the current work to complete the order.
+        </div>
+      )}
+
+      {canDispute && (
+        <div className="mb-6">
+          <Link
+            href={`/orders/${order.uuid}/dispute`}
+            className="inline-block text-yellow-500 hover:text-yellow-400 text-sm underline"
+          >
+            Raise a dispute
+          </Link>
+        </div>
+      )}
+
+      {order.status === 'DISPUTED' && (
+        <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+          <div className="text-yellow-300 font-semibold text-sm">
+            This order is under dispute — an admin will review and resolve it.
+          </div>
         </div>
       )}
 
@@ -313,14 +379,34 @@ export default async function OrderDetailPage({ params }) {
                       {s.status}
                     </span>
                   </div>
-                  <div className="text-xs space-y-1 font-mono text-gray-300">
-                    <div>
-                      <span className="text-gray-500">watermarked:</span> {s.watermarked_file_path}
-                    </div>
+                  <div className="text-xs space-y-2 mt-2">
+                    {s.watermarked_url ? (
+                      <a
+                        href={s.watermarked_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-block bg-white/5 border border-white/10 px-3 py-1 rounded hover:bg-white/10 text-indigo-300"
+                      >
+                        View watermarked preview ↗
+                      </a>
+                    ) : (
+                      <span className="text-gray-500 font-mono">{s.watermarked_file_path}</span>
+                    )}
                     {showOriginal && (
-                      <div>
-                        <span className="text-gray-500">original:</span> {s.file_path}
-                      </div>
+                      s.original_url ? (
+                        <div>
+                          <a
+                            href={s.original_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-block bg-green-500/10 border border-green-500/30 px-3 py-1 rounded hover:bg-green-500/20 text-green-300"
+                          >
+                            Download original ↗
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="text-gray-500 font-mono">{s.file_path}</div>
+                      )
                     )}
                   </div>
                 </div>
@@ -361,7 +447,7 @@ export default async function OrderDetailPage({ params }) {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-semibold">{b.writer_name}</span>
-                      <UserBadges points={b.writer_points} createdAt={b.writer_joined} />
+                      <UserBadges points={b.writer_points} created_at={b.writer_joined} />
                     </div>
                     <div className="text-xs text-gray-400">
                       {b.writer_points} pts · bid {new Date(b.created_at).toLocaleString()}

@@ -15,6 +15,8 @@ const TYPE_LABELS = {
   PAPER_ACCEPTED:    'Paper Accepted',
   ORDER_REFUNDED:    'Order Refunded',
   NEW_REVIEW:        'New Review',
+  DISPUTE_RAISED:    'Dispute Raised',
+  DISPUTE_RESOLVED:  'Dispute Resolved',
 };
 
 export default async function NotificationsPage() {

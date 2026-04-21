@@ -1,12 +1,13 @@
 'use server';
 
-import { auth } from '@/lib/auth/server';
+import { createSupabaseServer } from '@/lib/auth/server';
 import pool from '@/lib/db';
 import { redirect } from 'next/navigation';
 
 export async function submitApplication(_prevState, formData) {
-  const { data: session } = await auth.getSession();
-  if (!session?.user) return { error: 'Not signed in' };
+  const supabase = await createSupabaseServer();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) return { error: 'Not signed in' };
 
   const qualification = formData.get('qualification');
   const bio = formData.get('bio');
@@ -17,7 +18,7 @@ export async function submitApplication(_prevState, formData) {
   if (subjectIds.length === 0) return { error: 'Select at least one subject' };
   if (serviceIds.length === 0) return { error: 'Select at least one service' };
 
-  const userId = session.user.id;
+  const userId = authUser.id;
 
   await pool.query(
     'INSERT INTO writer (id, qualification, bio, status) VALUES ($1, $2, $3, $4)',

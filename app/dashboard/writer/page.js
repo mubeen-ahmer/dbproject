@@ -28,7 +28,7 @@ export default async function WriterDashboard() {
       </div>
       <div className="flex items-center gap-3 mb-2">
         <p className="text-gray-400">Hello, {user.name}.</p>
-        <UserBadges points={user.point} createdAt={user.created_at} />
+        <UserBadges points={user.point} created_at={user.created_at} />
       </div>
       <p className="text-gray-500 text-sm mb-6">
         {user.point} points · {tier.label}
