@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduDesk — Writer Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:#0f1724;color:#fff}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#374151;border-radius:99px}
+input,textarea,select,button{font-family:'DM Sans',sans-serif}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+const T = {
+  sidebar:'#0a0f1a', bg:'#0f1724', card:'#141e2e', cardHov:'#182235',
+  border:'rgba(255,255,255,0.07)', borderMed:'rgba(255,255,255,0.12)',
+  indigo:'#6366f1', indigoHov:'#818cf8', indigoFaint:'rgba(99,102,241,0.12)',
+  teal:'#14b8a6', tealFaint:'rgba(20,184,166,0.1)',
+  fg1:'#f3f4f6', fg2:'#9ca3af', fg3:'#6b7280', fg4:'#374151',
+  green:'#22c55e', greenFaint:'rgba(34,197,94,0.12)',
+  yellow:'#eab308', yellowFaint:'rgba(234,179,8,0.12)',
+  red:'#ef4444', redFaint:'rgba(239,68,68,0.1)',
+  orange:'#f97316',
+  blue:'#3b82f6', blueFaint:'rgba(59,130,246,0.12)',
+  amber:'#f59e0b',
+};
+
+/* ─── FAKE DATA ─── */
+const POOL_ORDERS = [
+  {id:'ORD-048',title:'Argumentative Essay — Universal Basic Income',subject:'Economics',service:'Essay',level:'Undergraduate',pages:4,deadline:'2025-04-28',citation:'MLA',minBid:'$32',posted:'2 hrs ago',bids:2},
+  {id:'ORD-051',title:'Dissertation Chapter 2 — Literature Review on Cognitive Load',subject:'Psychology',service:'Dissertation Chapter',level:'Masters',pages:14,deadline:'2025-05-05',citation:'APA',minBid:'$112',posted:'5 hrs ago',bids:1},
+  {id:'ORD-049',title:'Financial Analysis Report — Apple Inc. Q1 2025',subject:'Finance',service:'Business Report',level:'Undergraduate',pages:6,deadline:'2025-04-30',citation:'Harvard',minBid:'$48',posted:'8 hrs ago',bids:4},
+  {id:'ORD-052',title:'Lab Report — Enzyme Kinetics Experiment',subject:'Biology',service:'Lab Report',level:'Undergraduate',pages:5,deadline:'2025-04-27',citation:'APA',minBid:'$40',posted:'10 hrs ago',bids:3},
+  {id:'ORD-044',title:'Policy Analysis — NHS Funding Reform',subject:'Public Policy',service:'Policy Analysis',level:'Masters',pages:10,deadline:'2025-05-10',citation:'Chicago',minBid:'$80',posted:'1 day ago',bids:0},
+  {id:'ORD-046',title:'Creative Writing — Short Story (Dystopian Fiction)',subject:'Creative Writing',service:'Short Story',level:'Undergraduate',pages:8,deadline:'2025-05-02',citation:'None',minBid:'$64',posted:'1 day ago',bids:1},
+];
+
+const MY_ORDERS = [
+  {id:'ORD-039',title:'SWOT Analysis — Tesla Inc.',subject:'Business Administration',service:'Business Report',level:'Undergraduate',pages:8,deadline:'2025-04-25',citation:'Harvard',status:'IN_PROGRESS',price:'$80',student:'Jane A.',created:'Apr 17, 2025'},
+  {id:'ORD-035',title:'Lab Report — Acid-Base Titration',subject:'Chemistry',service:'Lab Report',level:'Undergraduate',pages:6,deadline:'2025-04-30',citation:'APA',status:'UNDER_REVIEW',price:'$60',student:'Mike L.',created:'Apr 12, 2025'},
+  {id:'ORD-031',title:'Annotated Bibliography — Climate Policy',subject:'Environmental Science',service:'Annotated Bibliography',level:'Masters',pages:4,deadline:'2025-04-15',citation:'Chicago',status:'COMPLETED',price:'$55',student:'Priya S.',created:'Apr 1, 2025'},
+  {id:'ORD-028',title:'Argumentative Essay — Universal Basic Income',subject:'Economics',service:'Essay',level:'Undergraduate',pages:3,deadline:'2025-04-10',citation:'MLA',status:'COMPLETED',price:'$28',student:'Carlos M.',created:'Mar 28, 2025'},
+];
+
+const NOTIFS = [
+  {id:1,type:'selected',text:'You\'ve been selected for "SWOT Analysis — Tesla Inc." Payment is held in escrow.',time:'1 hr ago',read:false},
+  {id:2,type:'review',text:'Mike L. submitted a revision request on "Lab Report — Acid-Base Titration". Review details inside.',time:'3 hrs ago',read:false},
+  {id:3,type:'complete',text:'"Annotated Bibliography" was accepted. $52.25 released to your wallet after commission.',time:'Apr 15',read:true},
+  {id:4,type:'info',text:'Deadline reminder: "Tesla SWOT" is due in 1 day. Make sure to submit on time.',time:'Apr 24',read:true},
+];
+
+const LEADERBOARD = [
+  {rank:1,name:'Amelia T.',points:1580,tier:'Elite',tenure:'Veteran',orders:92,rating:4.9},
+  {rank:2,name:'Derek P.',points:1120,tier:'Elite',tenure:'Veteran',orders:71,rating:4.8},
+  {rank:3,name:'You (James)',points:420,tier:'Gold',tenure:'Veteran',orders:34,rating:4.9,isMe:true},
+  {rank:4,name:'Fatima K.',points:380,tier:'Gold',tenure:'Half Year',orders:28,rating:4.7},
+  {rank:5,name:'Louis B.',points:250,tier:'Silver',tenure:'Quarterly',orders:18,rating:4.5},
+  {rank:6,name:'Nina C.',points:180,tier:'Silver',tenure:'1 Month',orders:12,rating:4.3},
+  {rank:7,name:'Omar S.',points:80,tier:'Bronze',tenure:'New',orders:4,rating:4.6},
+];
+
+const EARNINGS_MONTHLY = [
+  {month:'Nov',amount:180},
+  {month:'Dec',amount:340},
+  {month:'Jan',amount:290},
+  {month:'Feb',amount:410},
+  {month:'Mar',amount:520},
+  {month:'Apr',amount:135},
+];
+
+const TXNS = [
+  {id:'ORD-031',title:'Annotated Bibliography — Climate Policy',gross:55,commission:2.75,net:52.25,date:'Apr 15, 2025',status:'released'},
+  {id:'ORD-028',title:'Argumentative Essay — UBI',gross:28,commission:1.4,net:26.6,date:'Apr 10, 2025',status:'released'},
+  {id:'ORD-025',title:'Case Study — Amazon Supply Chain',gross:72,commission:3.6,net:68.4,date:'Mar 28, 2025',status:'released'},
+  {id:'ORD-022',title:'Lab Report — Titration',gross:45,commission:2.25,net:42.75,date:'Mar 15, 2025',status:'released'},
+];
+
+const CHAT_MSGS = [
+  {id:1,from:'student',name:'Jane A.',text:'Hi! Can you make sure the thesis is clearly stated in the intro? Also please use at least 5 scholarly sources.',time:'10:10 AM'},
+  {id:2,from:'writer',text:'Absolutely. I\'ll structure it as: Intro → Thesis → 3 body sections → Counterargument → Conclusion. Working on it now!',time:'10:12 AM'},
+  {id:3,from:'student',name:'Jane A.',text:'Sounds great. The rubric is attached to the order — please check the grading criteria.',time:'10:14 AM'},
+  {id:4,from:'writer',text:'Reviewed it. I see 30% of marks are on argument coherence — I\'ll make sure each paragraph directly supports the thesis.',time:'10:16 AM'},
+  {id:5,from:'student',name:'Jane A.',text:'Perfect. Can you also confirm the citation style? I put APA in the brief but just checking.',time:'10:18 AM'},
+  {id:6,from:'writer',text:'Yes, APA 7th edition throughout. I\'ll also include a reference list and in-text citations correctly formatted.',time:'10:20 AM'},
+];
+
+/* ─── SHARED ─── */
+function IconEl({children,size=18,stroke='currentColor',sw=1.8,viewBox='0 0 24 24',style={}}) {
+  return <svg width={size} height={size} viewBox={viewBox} fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={style}>{children}</svg>;
+}
+function Badge({children,variant='indigo',size='sm'}) {
+  const map={
+    indigo:{bg:'rgba(99,102,241,0.15)',color:'#a5b4fc',b:'rgba(99,102,241,0.25)'},
+    teal:{bg:'rgba(20,184,166,0.12)',color:'#5eead4',b:'rgba(20,184,166,0.25)'},
+    gold:{bg:'rgba(234,179,8,0.15)',color:'#fde047',b:'rgba(234,179,8,0.25)'},
+    blue:{bg:'rgba(59,130,246,0.15)',color:'#93c5fd',b:'rgba(59,130,246,0.25)'},
+    green:{bg:'rgba(34,197,94,0.12)',color:'#86efac',b:'rgba(34,197,94,0.25)'},
+    red:{bg:'rgba(239,68,68,0.12)',color:'#fca5a5',b:'rgba(239,68,68,0.25)'},
+    orange:{bg:'rgba(249,115,22,0.12)',color:'#fdba74',b:'rgba(249,115,22,0.25)'},
+    gray:{bg:'rgba(107,114,128,0.15)',color:'#d1d5db',b:'rgba(107,114,128,0.25)'},
+    amber:{bg:'rgba(180,83,9,0.2)',color:'#fbbf24',b:'rgba(180,83,9,0.3)'},
+    purple:{bg:'rgba(168,85,247,0.15)',color:'#d8b4fe',b:'rgba(168,85,247,0.25)'},
+  };
+  const v=map[variant]||map.indigo;
+  const p=size==='xs'?'2px 6px':'3px 9px'; const fs=size==='xs'?10:11;
+  return <span style={{display:'inline-flex',alignItems:'center',padding:p,borderRadius:999,fontSize:fs,fontWeight:600,background:v.bg,color:v.color,border:`1px solid ${v.b}`,whiteSpace:'nowrap'}}>{children}</span>;
+}
+function statusBadge(status) {
+  const map={OPEN:['blue','OPEN'],BIDDING:['blue','BIDDING'],ASSIGNED:['indigo','ASSIGNED'],IN_PROGRESS:['indigo','IN PROGRESS'],SUBMITTED:['gold','SUBMITTED'],UNDER_REVIEW:['gold','UNDER REVIEW'],REVISION_REQUESTED:['orange','REVISION'],COMPLETED:['green','COMPLETED'],DISPUTED:['red','DISPUTED'],CANCELLED:['gray','CANCELLED'],REFUNDED:['gray','REFUNDED']};
+  const [v,l]=map[status]||['gray',status];
+  return <Badge variant={v}>{l}</Badge>;
+}
+function Avatar({initials='?',size=36,gradient='135deg,#14b8a6,#5eead4'}) {
+  return <div style={{width:size,height:size,borderRadius:999,background:`linear-gradient(${gradient})`,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:size*0.38,color:'#fff',flexShrink:0,letterSpacing:'-0.02em'}}>{initials}</div>;
+}
+
+/* ─── CHAT ─── */
+function ChatPanel({orderId,orderTitle,studentName,onClose}) {
+  const [msgs,setMsgs]=useState(CHAT_MSGS);
+  const [input,setInput]=useState('');
+  const [warn,setWarn]=useState(false);
+  const bottomRef=useRef();
+  useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:'smooth'}); },[msgs]);
+  const send=()=>{
+    if(!input.trim()) return;
+    const blocked=/\d{7,}|@[a-z]+\.[a-z]+|https?:\/\//i.test(input);
+    if(blocked){setWarn(true);setTimeout(()=>setWarn(false),4000);return;}
+    setMsgs(m=>[...m,{id:Date.now(),from:'writer',text:input,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}]);
+    setInput('');
+  };
+  return (
+    <div style={{position:'fixed',inset:0,zIndex:200,display:'flex',alignItems:'stretch',justifyContent:'flex-end'}}>
+      <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.5)',backdropFilter:'blur(4px)'}} onClick={onClose}/>
+      <div style={{position:'relative',width:420,background:T.sidebar,display:'flex',flexDirection:'column',borderLeft:`1px solid ${T.border}`,animation:'slideIn 0.25s ease'}}>
+        <div style={{padding:'16px 20px',borderBottom:`1px solid ${T.border}`,display:'flex',alignItems:'center',gap:12,flexShrink:0}}>
+          <Avatar initials={studentName.split(' ').map(x=>x[0]).join('').slice(0,2)} size={38} gradient="135deg,#6366f1,#818cf8"/>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:14,fontWeight:600,color:T.fg1}}>{studentName}</div>
+            <div style={{fontSize:11,color:T.green,display:'flex',alignItems:'center',gap:4,marginTop:1}}>
+              <span style={{width:6,height:6,background:T.green,borderRadius:99}}/>Online
+            </div>
+          </div>
+          <div style={{fontFamily:'DM Mono,monospace',fontSize:11,color:T.fg3,background:T.indigoFaint,border:'1px solid rgba(99,102,241,0.2)',borderRadius:6,padding:'3px 8px'}}>{orderId}</div>
+          <button onClick={onClose} style={{background:'none',border:'none',color:T.fg3,cursor:'pointer',padding:4}}>
+            <IconEl><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconEl>
+          </button>
+        </div>
+        <div style={{padding:'10px 20px',background:'rgba(99,102,241,0.06)',borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
+          <div style={{fontSize:11,color:T.fg3}}>Order</div>
+          <div style={{fontSize:12,fontWeight:600,color:T.fg2,marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orderTitle}</div>
+        </div>
+        <div style={{flex:1,overflowY:'auto',padding:'20px',display:'flex',flexDirection:'column',gap:14}}>
+          {msgs.map(m=>(
+            <div key={m.id} style={{display:'flex',flexDirection:m.from==='writer'?'row-reverse':'row',gap:8,alignItems:'flex-end'}}>
+              {m.from==='student' && <Avatar initials={studentName.split(' ').map(x=>x[0]).join('').slice(0,2)} size={28} gradient="135deg,#6366f1,#818cf8"/>}
+              <div style={{maxWidth:'75%'}}>
+                {m.from==='student' && <div style={{fontSize:10,color:T.fg3,marginBottom:3,marginLeft:2}}>{m.name}</div>}
+                <div style={{background:m.from==='writer'?T.teal:'rgba(255,255,255,0.06)',borderRadius:m.from==='writer'?'14px 14px 4px 14px':'14px 14px 14px 4px',padding:'10px 13px',fontSize:13,lineHeight:1.55,color:'#fff'}}>
+                  {m.text}
+                </div>
+                <div style={{fontSize:10,color:T.fg4,marginTop:3,textAlign:m.from==='writer'?'right':'left'}}>{m.time}</div>
+              </div>
+            </div>
+          ))}
+          {warn && <div style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.25)',borderRadius:10,padding:'10px 13px',fontSize:12,color:'#fca5a5',lineHeight:1.5}}>⚠ Sharing contact info removes platform protection. Message not sent.</div>}
+          <div ref={bottomRef}/>
+        </div>
+        <div style={{padding:'12px 16px',borderTop:`1px solid ${T.border}`,flexShrink:0}}>
+          <div style={{display:'flex',gap:8,alignItems:'flex-end'}}>
+            <textarea value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}} placeholder="Type a message… (Enter to send)" rows={1} style={{flex:1,background:'rgba(255,255,255,0.05)',border:`1px solid ${T.borderMed}`,borderRadius:10,padding:'10px 13px',color:'#fff',fontSize:13,outline:'none',resize:'none',lineHeight:1.5,fontFamily:'DM Sans,sans-serif'}}/>
+            <button onClick={send} style={{width:38,height:38,borderRadius:10,background:T.teal,border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'background 0.15s'}}
+              onMouseEnter={e=>e.currentTarget.style.background='#0d9488'} onMouseLeave={e=>e.currentTarget.style.background=T.teal}>
+              <IconEl stroke="#fff"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></IconEl>
+            </button>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
+    </div>
+  );
+}
+
+/* ─── BID MODAL ─── */
+function BidModal({order,onClose}) {
+  const [price,setPrice]=useState('');
+  const [deadline,setDeadline]=useState('');
+  const [pitch,setPitch]=useState('');
+  const [done,setDone]=useState(false);
+  const inp={width:'100%',background:'rgba(255,255,255,0.05)',border:`1px solid ${T.border}`,borderRadius:8,padding:'10px 13px',color:'#fff',fontSize:13,outline:'none'};
+  if(done) return (
+    <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
+      <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:'32px',textAlign:'center',maxWidth:360,width:'90%'}}>
+        <div style={{width:56,height:56,background:'rgba(20,184,166,0.12)',border:'1px solid rgba(20,184,166,0.25)',borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}}>
+          <IconEl stroke="#5eead4" size={26}><polyline points="20 6 9 17 4 12"/></IconEl>
+        </div>
+        <div style={{fontSize:16,fontWeight:700,marginBottom:8}}>Bid placed!</div>
+        <div style={{fontSize:13,color:T.fg3,lineHeight:1.5,marginBottom:20}}>Your bid of <strong style={{color:T.fg1}}>${price}</strong> has been submitted. You'll be notified if the student selects you.</div>
+        <button onClick={onClose} style={{padding:'10px 24px',borderRadius:8,background:T.teal,color:'#fff',border:'none',fontSize:13,fontWeight:600,cursor:'pointer'}}>Done</button>
+      </div>
+    </div>
+  );
+  return (
+    <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
+      <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:'28px',maxWidth:480,width:'90%',maxHeight:'90vh',overflowY:'auto'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}}>
+          <div>
+            <div style={{fontSize:15,fontWeight:700,color:T.fg1,marginBottom:4}}>Place a bid</div>
+            <div style={{fontSize:12,color:T.fg3,maxWidth:340,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{order.title}</div>
+          </div>
+          <button onClick={onClose} style={{background:'none',border:'none',color:T.fg3,cursor:'pointer'}}>
+            <IconEl><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconEl>
+          </button>
+        </div>
+        <div style={{background:'rgba(255,255,255,0.03)',border:`1px solid ${T.border}`,borderRadius:10,padding:'12px 14px',marginBottom:20,display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {[['Subject',order.subject],['Service',order.service],['Level',order.level],['Pages',`${order.pages} pages`],['Deadline',order.deadline],['Min bid',order.minBid]].map(([k,v])=>(
+            <div key={k}><div style={{fontSize:10,color:T.fg4,textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:1}}>{k}</div><div style={{fontSize:12,fontWeight:600,color:T.fg2}}>{v}</div></div>
+          ))}
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:14}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+            <div>
+              <label style={{display:'block',fontSize:11,fontWeight:600,color:T.fg3,marginBottom:5}}>Your price ($)</label>
+              <input type="number" min={parseInt(order.minBid.replace('$',''))} value={price} onChange={e=>setPrice(e.target.value)} placeholder={order.minBid} style={inp} onFocus={e=>e.target.style.borderColor=T.teal} onBlur={e=>e.target.style.borderColor=T.border}/>
+              <div style={{fontSize:10,color:T.fg4,marginTop:3}}>Min: {order.minBid}</div>
+            </div>
+            <div>
+              <label style={{display:'block',fontSize:11,fontWeight:600,color:T.fg3,marginBottom:5}}>Your deadline</label>
+              <input type="date" value={deadline} onChange={e=>setDeadline(e.target.value)} style={inp} onFocus={e=>e.target.style.borderColor=T.teal} onBlur={e=>e.target.style.borderColor=T.border}/>
+            </div>
+          </div>
+          <div>
+            <label style={{display:'block',fontSize:11,fontWeight:600,color:T.fg3,marginBottom:5}}>Pitch message</label>
+            <textarea value={pitch} onChange={e=>setPitch(e.target.value)} placeholder="Tell the student why you're the best fit for this order…" rows={4} style={{...inp,resize:'none',fontFamily:'DM Sans,sans-serif',lineHeight:1.5}} onFocus={e=>e.target.style.borderColor=T.teal} onBlur={e=>e.target.style.borderColor=T.border}/>
+          </div>
+          <button onClick={()=>{if(price&&deadline&&pitch)setDone(true);}} style={{padding:'12px',borderRadius:8,background:T.teal,color:'#fff',border:'none',fontSize:14,fontWeight:600,cursor:'pointer'}}>Submit bid</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SIDEBAR ─── */
+function Sidebar({page,setPage,notifCount}) {
+  const nav=[
+    {id:'home',label:'Overview',icon:<><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>},
+    {id:'browse',label:'Browse Orders',icon:<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>},
+    {id:'my-orders',label:'My Orders',icon:<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></>},
+    {id:'earnings',label:'Earnings',icon:<><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></>},
+    {id:'notifications',label:'Notifications',badge:notifCount,icon:<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>},
+    {id:'leaderboard',label:'Leaderboard',icon:<><polyline points="18 20 18 10"/><polyline points="12 20 12 4"/><polyline points="6 20 6 14"/></>},
+  ];
+  return (
+    <div style={{width:224,background:T.sidebar,borderRight:`1px solid ${T.border}`,display:'flex',flexDirection:'column',flexShrink:0,height:'100%'}}>
+      <div style={{padding:'20px 16px 16px',borderBottom:`1px solid ${T.border}`}}>
+        <a href="index.html" style={{display:'flex',alignItems:'center',gap:10,textDecoration:'none'}}>
+          <div style={{width:32,height:32,background:'linear-gradient(135deg,#6366f1,#818cf8)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:13,color:'#fff',flexShrink:0}}>Ed</div>
+          <span style={{fontSize:'1rem',fontWeight:700,color:'#fff'}}>EduDesk</span>
+        </a>
+        <div style={{marginTop:12,padding:'8px 10px',background:T.tealFaint,borderRadius:8,border:'1px solid rgba(20,184,166,0.2)'}}>
+          <div style={{fontSize:10,color:T.fg3,letterSpacing:'0.06em',textTransform:'uppercase',fontWeight:600}}>Writer</div>
+          <div style={{fontSize:12,fontWeight:600,color:T.fg1,marginTop:2}}>James R.</div>
+          <div style={{display:'flex',gap:4,marginTop:4}}>
+            <Badge variant="gold" size="xs">Gold</Badge>
+            <Badge variant="indigo" size="xs">Veteran</Badge>
+          </div>
+          <div style={{display:'flex',gap:4,marginTop:6,alignItems:'center'}}>
+            <span style={{color:T.amber,fontSize:12}}>★★★★★</span>
+            <span style={{fontSize:11,color:T.fg3}}>4.9 (34 reviews)</span>
+          </div>
+        </div>
+      </div>
+      <nav style={{flex:1,padding:'10px 8px',display:'flex',flexDirection:'column',gap:2,overflowY:'auto'}}>
+        {nav.map(n=>{
+          const active=page===n.id;
+          return (
+            <button key={n.id} onClick={()=>setPage(n.id)} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:8,background:active?'rgba(20,184,166,0.12)':'transparent',border:active?'1px solid rgba(20,184,166,0.25)':'1px solid transparent',color:active?'#5eead4':T.fg3,cursor:'pointer',fontSize:13,fontWeight:active?600:500,textAlign:'left',position:'relative',transition:'all 0.15s',width:'100%'}}
+              onMouseEnter={e=>{if(!active)e.currentTarget.style.background='rgba(255,255,255,0.04)';}}
+              onMouseLeave={e=>{if(!active)e.currentTarget.style.background='transparent';}}>
+              <IconEl stroke="currentColor" size={16}>{n.icon}</IconEl>
+              <span style={{flex:1}}>{n.label}</span>
+              {n.badge>0 && <span style={{background:T.teal,color:'#fff',borderRadius:99,fontSize:10,fontWeight:700,padding:'1px 6px',minWidth:18,textAlign:'center'}}>{n.badge}</span>}
+            </button>
+          );
+        })}
+      </nav>
+      <div style={{padding:'12px 16px',borderTop:`1px solid ${T.border}`}}>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:5}}>
+          <span style={{color:T.fg3,fontWeight:500}}>420 pts · Gold</span>
+          <span style={{color:T.fg3}}>180 to Platinum</span>
+        </div>
+        <div style={{height:4,background:'rgba(255,255,255,0.07)',borderRadius:99,overflow:'hidden'}}>
+          <div style={{height:'100%',width:'70%',background:'linear-gradient(90deg,#14b8a6,#5eead4)',borderRadius:99}}/>
+        </div>
+      </div>
+      <div style={{padding:'0 8px 12px'}}>
+        <a href="index.html" style={{display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:8,color:T.fg3,textDecoration:'none',fontSize:13,fontWeight:500,transition:'all 0.15s'}}
+          onMouseEnter={e=>{e.currentTarget.style.background='rgba(239,68,68,0.08)';e.currentTarget.style.color='#fca5a5';}}
+          onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color=T.fg3;}}>
+          <IconEl stroke="currentColor" size={16}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></IconEl>
+          Sign out
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function TopBar({title,subtitle}) {
+  return (
+    <div style={{height:58,borderBottom:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 24px',flexShrink:0}}>
+      <div>
+        <div style={{fontSize:15,fontWeight:700,color:T.fg1,letterSpacing:'-0.01em'}}>{title}</div>
+        {subtitle && <div style={{fontSize:11,color:T.fg3,marginTop:1}}>{subtitle}</div>}
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:6}}>
+        <div style={{fontFamily:'DM Mono,monospace',fontSize:11,color:T.fg3,background:'rgba(255,255,255,0.04)',border:`1px solid ${T.border}`,borderRadius:6,padding:'3px 10px'}}>
+          {new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
+        </div>
+        <Avatar initials="JR" size={32}/>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({label,value,sub,accent='teal',icon}) {
+  const colors={teal:{bg:T.tealFaint,b:'rgba(20,184,166,0.2)',c:'#5eead4'},indigo:{bg:T.indigoFaint,b:'rgba(99,102,241,0.2)',c:'#a5b4fc'},green:{bg:T.greenFaint,b:'rgba(34,197,94,0.2)',c:'#86efac'},amber:{bg:'rgba(245,158,11,0.1)',b:'rgba(245,158,11,0.2)',c:'#fcd34d'}};
+  const col=colors[accent]||colors.teal;
+  return (
+    <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:'18px 20px',flex:1,minWidth:140}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
+        <div style={{fontSize:11,fontWeight:600,color:T.fg3,textTransform:'uppercase',letterSpacing:'0.06em'}}>{label}</div>
+        <div style={{width:34,height:34,borderRadius:9,background:col.bg,border:`1px solid ${col.b}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <IconEl stroke={col.c} size={16}>{icon}</IconEl>
+        </div>
+      </div>
+      <div style={{fontSize:'1.6rem',fontWeight:700,color:T.fg1,letterSpacing:'-0.03em',lineHeight:1}}>{value}</div>
+      <div style={{fontSize:11,color:T.fg3,marginTop:5}}>{sub}</div>
+    </div>
+  );
+}
+
+/* ─── HOME ─── */
+function HomePage({setPage,setChat}) {
+  const active=MY_ORDERS.filter(o=>!['COMPLETED','CANCELLED'].includes(o.status));
+  return (
+    <div style={{flex:1,overflowY:'auto',padding:'24px'}}>
+      <div style={{display:'flex',gap:12,marginBottom:24,flexWrap:'wrap'}}>
+        <StatCard label="Active Orders" value="2" sub="1 awaiting submission" accent="teal" icon={<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></>}/>
+        <StatCard label="Total Earned" value="$875" sub="This month: $135" accent="green" icon={<><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></>}/>
+        <StatCard label="Rating" value="4.9★" sub="Based on 34 reviews" accent="amber" icon={<><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></>}/>
+        <StatCard label="Completed" value="34" sub="All time · Gold tier" accent="indigo" icon={<><polyline points="20 6 9 17 4 12"/></>}/>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 320px',gap:16}}>
+        <div>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:700,color:T.fg1}}>Active Orders</div>
+            <button onClick={()=>setPage('browse')} style={{background:'none',border:'none',color:T.teal,fontSize:12,cursor:'pointer',fontWeight:600}}>Browse new orders →</button>
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {active.map(o=>(
+              <div key={o.id} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:'14px 16px',cursor:'pointer',transition:'all 0.15s'}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(20,184,166,0.3)';e.currentTarget.style.background=T.cardHov;}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.background=T.card;}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+                  <div style={{flex:1,paddingRight:12}}>
+                    <div style={{fontSize:13,fontWeight:600,color:T.fg1,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{o.title}</div>
+                    <div style={{fontSize:11,color:T.fg3}}>Student: {o.student} · Due {o.deadline}</div>
+                  </div>
+                  {statusBadge(o.status)}
+                </div>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <div style={{fontSize:11,color:T.fg3}}>{o.subject} · {o.pages} pages · {o.citation}</div>
+                  <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                    <span style={{fontSize:13,fontWeight:700,color:T.fg1}}>{o.price}</span>
+                    <button onClick={e=>{e.stopPropagation();setChat(o);}} style={{background:T.tealFaint,border:'1px solid rgba(20,184,166,0.25)',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:600,color:'#5eead4',cursor:'pointer'}}>Chat</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+          <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:'16px'}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.fg2,marginBottom:12}}>This Month</div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {[['Orders completed','2'],['Bids placed','5'],['Acceptance rate','40%'],['Avg. rating','4.9 ★']].map(([k,v])=>(
+                <div key={k} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:`1px solid ${T.border}`}}>
+                  <span style={{fontSize:12,color:T.fg3}}>{k}</span>
+                  <span style={{fontSize:13,fontWeight:700,color:T.fg1}}>{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:'16px'}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.fg2,marginBottom:10}}>Quick Actions</div>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              {[{l:'Browse order pool',sub:'6 new orders available',p:'browse',c:T.teal},{l:'View earnings',sub:'$135 this month',p:'earnings',c:T.green},{l:'Leaderboard',sub:'You\'re ranked #3',p:'leaderboard',c:T.amber}].map(a=>(
+                <button key={a.l} onClick={()=>setPage(a.p)} style={{display:'flex',gap:10,padding:'9px 11px',borderRadius:8,background:'rgba(255,255,255,0.03)',border:`1px solid ${T.border}`,cursor:'pointer',textAlign:'left',alignItems:'center',transition:'all 0.15s'}}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.15)'} onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}>
+                  <div style={{width:6,height:6,borderRadius:99,background:a.c,flexShrink:0}}/>
+                  <div><div style={{fontSize:12,fontWeight:600,color:T.fg1}}>{a.l}</div><div style={{fontSize:10,color:T.fg3}}>{a.sub}</div></div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── BROWSE ORDERS ─── */
+function BrowsePage({setBid}) {
+  const [filter,setFilter]=useState('all');
+  const subjects=['all','Economics','Psychology','Finance','Biology','Public Policy','Creative Writing'];
+  const visible=POOL_ORDERS.filter(o=>filter==='all'||o.subject===filter);
+  return (
+    <div style={{flex:1,overflowY:'auto',padding:'24px'}}>
+      <div style={{display:'flex',gap:6,marginBottom:16,flexWrap:'wrap'}}>
+        {subjects.map(s=>(
+          <button key={s} onClick={()=>setFilter(s)} style={{padding:'6px 13px',borderRadius:999,fontSize:12,fontWeight:600,border:'none',cursor:'pointer',background:filter===s?T.teal:'rgba(255,255,255,0.05)',color:filter===s?'#fff':T.fg3,transition:'all 0.15s'}}>
+            {s==='all'?'All subjects':s}
+          </button>
+        ))}
+        <div style={{marginLeft:'auto',fontSize:12,color:T.fg3,display:'flex',alignItems:'center'}}>{visible.length} orders</div>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {visible.map(o=>(
+          <div key={o.id} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:'16px 18px',transition:'all 0.15s'}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(20,184,166,0.3)';e.currentTarget.style.background=T.cardHov;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.background=T.card;}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
+              <div style={{flex:1,paddingRight:16}}>
+                <div style={{fontSize:13,fontWeight:600,color:T.fg1,marginBottom:4}}>{o.title}</div>
+                <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                  <Badge variant="blue" size="xs">{o.subject}</Badge>
+                  <Badge variant="gray" size="xs">{o.service}</Badge>
+                  <Badge variant="gray" size="xs">{o.level}</Badge>
+                </div>
+              </div>
+              <div style={{textAlign:'right',flexShrink:0}}>
+                <div style={{fontSize:15,fontWeight:700,color:T.fg1}}>from {o.minBid}</div>
+                <div style={{fontSize:10,color:T.fg4,marginTop:2}}>min bid</div>
+              </div>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:8}}>
+              <div style={{display:'flex',gap:14}}>
+                <span style={{fontSize:11,color:T.fg3}}><span style={{color:T.fg4}}>Pages:</span> {o.pages}</span>
+                <span style={{fontSize:11,color:T.fg3}}><span style={{color:T.fg4}}>Due:</span> {o.deadline}</span>
+                <span style={{fontSize:11,color:T.fg3}}><span style={{color:T.fg4}}>Citation:</span> {o.citation}</span>
+                <span style={{fontSize:11,color:T.fg3}}><span style={{color:T.fg4}}>Posted:</span> {o.posted}</span>
+                {o.bids>0 && <span style={{fontSize:11,color:T.indigoHov}}>{o.bids} bids</span>}
+              </div>
+              <button onClick={()=>setBid(o)} style={{padding:'7px 16px',borderRadius:7,background:T.tealFaint,color:'#5eead4',border:'1px solid rgba(20,184,166,0.3)',fontSize:12,fontWeight:600,cursor:'pointer',transition:'all 0.15s'}}
+                onMouseEnter={e=>{e.currentTarget.style.background='rgba(20,184,166,0.2)';}} onMouseLeave={e=>{e.currentTarget.style.background=T.tealFaint;}}>
+                Place bid
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── MY ORDERS ─── */
+function MyOrdersPage({setChat}) {
+  const [expanded,setExpanded]=useState(null);
+  return (
+    <div style={{flex:1,overflowY:'auto',padding:'24px'}}>
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {MY_ORDERS.map(o=>{
+          const open=expanded===o.id;
+          return (
+            <div key={o.id} style={{background:T.card,border:`1px solid ${open?'rgba(20,184,166,0.3)':T.border}`,borderRadius:12,overflow:'hidden',transition:'border-color 0.2s'}}>
+              <div style={{padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',gap:12}} onClick={()=>setExpanded(open?null:o.id)}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,color:T.fg1,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{o.title}</div>
+                  <div style={{fontSize:11,color:T.fg3}}>{o.id} · Student: {o.student} · {o.pages} pages</div>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+                  {statusBadge(o.status)}
+                  <span style={{fontSize:13,fontWeight:700,color:T.fg1}}>{o.price}</span>
+                  <IconEl stroke={T.fg4} size={14}><polyline points={open?'18 15 12 9 6 15':'6 9 12 15 18 9'}/></IconEl>
+                </div>
+              </div>
+              {open && (
+                <div style={{borderTop:`1px solid ${T.border}`,padding:'14px 16px',background:'rgba(255,255,255,0.02)'}}>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:14}}>
+                    {[['Subject',o.subject],['Level',o.level],['Deadline',o.deadline],['Created',o.created]].map(([k,v])=>(
+                      <div key={k}><div style={{fontSize:10,color:T.fg4,marginBottom:2,textTransform:'uppercase',letterSpacing:'0.05em'}}>{k}</div><div style={{fontSize:12,fontWeight:600,color:T.fg2}}>{v}</div></div>
+                    ))}
+                  </div>
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                    {o.status==='IN_PROGRESS' && <>
+                      <button onClick={()=>setChat(o)} style={{padding:'7px 14px',borderRadius:7,background:T.tealFaint,color:'#5eead4',border:'1px solid rgba(20,184,166,0.25)',fontSize:12,fontWeight:600,cursor:'pointer'}}>Open Chat</button>
+                      <button style={{padding:'7px 14px',borderRadius:7,background:T.indigoFaint,color:'#a5b4fc',border:'1px solid rgba(99,102,241,0.25)',fontSize:12,fontWeight:600,cursor:'pointer'}}>Submit Paper</button>
+                    </>}
+                    {o.status==='UNDER_REVIEW' && <button style={{padding:'7px 14px',borderRadius:7,background:T.yellowFaint,color:'#fde047',border:'1px solid rgba(234,179,8,0.25)',fontSize:12,fontWeight:600,cursor:'pointer'}}>Awaiting student review…</button>}
+                    {o.status==='COMPLETED' && <button style={{padding:'7px 14px',borderRadius:7,background:T.greenFaint,color:'#86efac',border:'1px solid rgba(34,197,94,0.25)',fontSize:12,fontWeight:600,cursor:'pointer'}}>Leave review for student</button>}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─── EARNINGS ─── */
+function EarningsPage() {
+  const maxAmt=Math.max(...EARNINGS_MONTHLY.map(m=>m.amount));
+  const total=TXNS.reduce((a,t)=>a+t.net,0);
+  return (
+    <div style={{flex:1,overflowY:'auto',padding:'24px'}}>
+      <div style={{display:'flex',gap:12,marginBottom:20,flexWrap:'wrap'}}>
+        {[['Total earned','$875','All time',T.green],['This month','$135','Apr 2025',T.teal],['Pending','$140','In escrow',T.yellow],['Commission','5%','Platform fee',T.fg3]].map(([l,v,s,c])=>(
+          <div key={l} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:'16px 20px',flex:1,minWidth:130}}>
+            <div style={{fontSize:11,fontWeight:600,color:T.fg3,textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8}}>{l}</div>
+            <div style={{fontSize:'1.5rem',fontWeight:700,color:c,letterSpacing:'-0.03em',lineHeight:1}}>{v}</div>
+            <div style={{fontSize:11,color:T.fg3,marginTop:5}}>{s}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Bar chart */}
+      <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:'20px',marginBottom:16}}>
+        <div style={{fontSize:13,fontWeight:700,color:T.fg1,marginBottom:20}}>Monthly earnings (last 6 months)</div>
+        <div style={{display:'flex',gap:12,alignItems:'flex-end',height:120}}>
+          {EARNINGS_MONTHLY.map(m=>(
+            <div key={m.month} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+              <div style={{fontSize:11,color:T.teal,fontWeight:600}}>${m.amount}</div>
+              <div style={{width:'100%',height:Math.max(8,m.amount/maxAmt*90),background:m.month==='Apr'?'rgba(20,184,166,0.4)':'rgba(20,184,166,0.2)',border:`1px solid rgba(20,184,166,${m.month==='Apr'?0.5:0.25})`,borderRadius:'4px 4px 0 0',transition:'all 0.3s'}}/>
+              <div style={{fontSize:11,color:T.fg3}}>{m.month}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Transactions */}
+      <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,overflow:'hidden'}}>
+        <div style={{padding:'14px 20px',borderBottom:`1px solid ${T.border}`,display:'grid',gridTemplateColumns:'1fr 70px 70px 70px 80px',gap:12,fontSize:11,fontWeight:700,color:T.fg4,textTransform:'uppercase',letterSpacing:'0.06em'}}>
+          <span>Order</span><span style={{textAlign:'right'}}>Gross</span><span style={{textAlign:'right'}}>Fee</span><span style={{textAlign:'right'}}>Net</span><span style={{textAlign:'right'}}>Status</span>
+        </div>
+        {TXNS.map(t=>(
+          <div key={t.id} style={{padding:'12px 20px',borderBottom:`1px solid ${T.border}`,display:'grid',gridTemplateColumns:'1fr 70px 70px 70px 80px',gap:12,alignItems:'center'}}
+            onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.02)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+            <div>
+              <div style={{fontSize:12,fontWeight:600,color:T.fg1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.title}</div>
+              <div style={{fontSize:10,color:T.fg4,marginTop:2}}>{t.id} · {t.date}</div>
+            </div>
+            <div style={{fontSize:12,fontWeight:600,color:T.fg2,textAlign:'right'}}>${t.gross}</div>
+            <div style={{fontSize:12,color:T.red,textAlign:'right'}}>−${t.commission}</div>
+            <div style={{fontSize:13,fontWeight:700,color:T.green,textAlign:'right'}}>${t.net}</div>
+            <div style={{textAlign:'right'}}><Badge variant="green" size="xs">Released</Badge></div>
+          </div>
+        ))}
+        <div style={{padding:'12px 20px',display:'flex',justifyContent:'flex-end',gap:4}}>
+          <span style={{fontSize:12,color:T.fg3}}>Total net:</span>
+          <span style={{fontSize:13,fontWeight:700,color:T.green}}>${total.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── NOTIFICATIONS ─── */
+function NotificationsPage({notifs,markRead}) {
+  return (
+    <div style={{flex:1,overflowY:'auto',padding:'24px'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+        <div style={{fontSize:12,color:T.fg3}}>{notifs.filter(n=>!n.read).length} unread</div>
+        <button onClick={markRead} style={{background:'none',border:'none',color:T.teal,fontSize:12,cursor:'pointer',fontWeight:600}}>Mark all read</button>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {notifs.map(n=>(
+          <div key={n.id} style={{background:n.read?T.card:'rgba(20,184,166,0.06)',border:`1px solid ${n.read?T.border:'rgba(20,184,166,0.2)'}`,borderRadius:12,padding:'14px 16px',display:'flex',gap:12,alignItems:'flex-start',transition:'all 0.2s'}}>
+            <div style={{width:8,height:8,borderRadius:99,background:n.read?'transparent':T.teal,marginTop:5,flexShrink:0,border:n.read?`1px solid ${T.fg4}`:'none'}}/>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,color:n.read?T.fg3:T.fg1,lineHeight:1.5}}>{n.text}</div>
+              <div style={{fontSize:11,color:T.fg4,marginTop:4}}>{n.time}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── LEADERBOARD ─── */
+function LeaderboardPage() {
+  const tierV={Bronze:'amber',Silver:'gray',Gold:'gold',Platinum:'teal',Elite:'purple'};
+  const tenureV={Veteran:'indigo','Half Year':'teal',Quarterly:'green','1 Month':'blue',New:'gray'};
+  return (
+    <div style={{flex:1,overflowY:'auto',padding:'24px'}}>
+      <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,overflow:'hidden'}}>
+        <div style={{padding:'14px 20px',borderBottom:`1px solid ${T.border}`,display:'grid',gridTemplateColumns:'40px 1fr 80px 70px 80px 80px',gap:12,fontSize:11,fontWeight:700,color:T.fg4,textTransform:'uppercase',letterSpacing:'0.06em'}}>
+          <span>#</span><span>Writer</span><span style={{textAlign:'center'}}>Points</span><span style={{textAlign:'center'}}>Tier</span><span style={{textAlign:'center'}}>Orders</span><span style={{textAlign:'center'}}>Rating</span>
+        </div>
+        {LEADERBOARD.map(u=>(
+          <div key={u.rank} style={{padding:'12px 20px',borderBottom:`1px solid ${T.border}`,display:'grid',gridTemplateColumns:'40px 1fr 80px 70px 80px 80px',gap:12,alignItems:'center',background:u.isMe?'rgba(20,184,166,0.07)':'transparent',transition:'background 0.15s'}}
+            onMouseEnter={e=>{if(!u.isMe)e.currentTarget.style.background='rgba(255,255,255,0.02)';}}
+            onMouseLeave={e=>{if(!u.isMe)e.currentTarget.style.background='transparent';}}>
+            <div style={{fontSize:14,fontWeight:700,color:u.rank<=3?T.amber:T.fg4,textAlign:'center'}}>{u.rank<=3?['🥇','🥈','🥉'][u.rank-1]:u.rank}</div>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <Avatar initials={u.name.split(' ').map(x=>x[0]).join('').slice(0,2)} size={32} gradient={u.isMe?'135deg,#14b8a6,#5eead4':'135deg,#374151,#4b5563'}/>
+              <div>
+                <div style={{fontSize:13,fontWeight:u.isMe?700:500,color:u.isMe?'#5eead4':T.fg1}}>{u.name}</div>
+                <Badge variant={tenureV[u.tenure]||'gray'} size="xs">{u.tenure}</Badge>
+              </div>
+            </div>
+            <div style={{fontSize:14,fontWeight:700,color:T.fg1,textAlign:'center'}}>{u.points.toLocaleString()}</div>
+            <div style={{textAlign:'center'}}><Badge variant={tierV[u.tier]||'gray'} size="xs">{u.tier}</Badge></div>
+            <div style={{fontSize:13,color:T.fg3,textAlign:'center'}}>{u.orders}</div>
+            <div style={{fontSize:13,color:T.amber,textAlign:'center',fontWeight:600}}>{u.rating} ★</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── APP ─── */
+function App() {
+  const [page,setPage]=useState('home');
+  const [chat,setChat]=useState(null);
+  const [bid,setBid]=useState(null);
+  const [notifs,setNotifs]=useState(NOTIFS);
+  const unread=notifs.filter(n=>!n.read).length;
+  const markRead=()=>setNotifs(n=>n.map(x=>({...x,read:true})));
+  const titles={home:['Overview','Welcome back, James'],browse:['Browse Orders','Find your next assignment'],
+    'my-orders':['My Orders','Track your assignments'],earnings:['Earnings','Your payment history'],
+    notifications:['Notifications','Stay up to date'],leaderboard:['Leaderboard','Writer rankings']};
+  const [ti,sub]=titles[page]||['Dashboard',''];
+  return (
+    <div style={{display:'flex',height:'100%'}}>
+      <Sidebar page={page} setPage={setPage} notifCount={unread}/>
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        <TopBar title={ti} subtitle={sub}/>
+        {page==='home' && <HomePage setPage={setPage} setChat={setChat}/>}
+        {page==='browse' && <BrowsePage setBid={setBid}/>}
+        {page==='my-orders' && <MyOrdersPage setChat={setChat}/>}
+        {page==='earnings' && <EarningsPage/>}
+        {page==='notifications' && <NotificationsPage notifs={notifs} markRead={markRead}/>}
+        {page==='leaderboard' && <LeaderboardPage/>}
+      </div>
+      {chat && <ChatPanel orderId={chat.id} orderTitle={chat.title} studentName={chat.student||'Jane A.'} onClose={()=>setChat(null)}/>}
+      {bid && <BidModal order={bid} onClose={()=>setBid(null)}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

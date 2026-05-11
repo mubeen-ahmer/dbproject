@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=DM+Mono:wght@400&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#111827;padding:24px;display:flex;flex-direction:column;gap:16px}
+.label{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4b5563;margin-bottom:6px}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;border:none;cursor:pointer;transition:all 0.15s}
+.btn-primary{background:#6366f1;color:#fff}
+.btn-primary:hover{background:#818cf8}
+.btn-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.18)}
+.btn-ghost:hover{background:rgba(255,255,255,0.07)}
+.btn-teal{background:rgba(20,184,166,0.15);color:#5eead4;border:1px solid rgba(20,184,166,0.3)}
+.btn-sm{padding:7px 14px;font-size:12px}
+.btn-lg{padding:14px 28px;font-size:16px;box-shadow:0 4px 24px rgba(99,102,241,0.3)}
+.btn-disabled{opacity:0.45;cursor:not-allowed}
+</style></head><body>
+<div>
+  <div class="label">Primary</div>
+  <div class="btn-row">
+    <button class="btn btn-primary btn-sm">Small</button>
+    <button class="btn btn-primary">Default</button>
+    <button class="btn btn-primary btn-lg">Large CTA</button>
+    <button class="btn btn-primary btn-disabled" disabled>Disabled</button>
+  </div>
+</div>
+<div>
+  <div class="label">Ghost / Outline</div>
+  <div class="btn-row">
+    <button class="btn btn-ghost btn-sm">Sign in</button>
+    <button class="btn btn-ghost">My Orders</button>
+    <button class="btn btn-ghost">Browse Pool</button>
+  </div>
+</div>
+<div>
+  <div class="label">Writer Accent (Teal)</div>
+  <div class="btn-row">
+    <button class="btn btn-teal">Apply as a writer</button>
+    <button class="btn btn-teal btn-sm">Submit application</button>
+  </div>
+</div>
+</body></html>

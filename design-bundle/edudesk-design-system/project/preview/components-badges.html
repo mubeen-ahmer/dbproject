@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#111827;padding:20px;display:flex;flex-direction:column;gap:16px}
+.label{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4b5563;margin-bottom:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600}
+
+/* Rank Tiers */
+.bronze{background:rgba(180,83,9,0.2);color:#fbbf24;border:1px solid rgba(180,83,9,0.3)}
+.silver{background:rgba(156,163,175,0.15);color:#e5e7eb;border:1px solid rgba(156,163,175,0.25)}
+.gold{background:rgba(234,179,8,0.15);color:#fde047;border:1px solid rgba(234,179,8,0.25)}
+.platinum{background:rgba(34,211,238,0.12);color:#67e8f9;border:1px solid rgba(34,211,238,0.25)}
+.elite{background:rgba(168,85,247,0.15);color:#d8b4fe;border:1px solid rgba(168,85,247,0.25)}
+
+/* Tenure */
+.veteran{background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.25)}
+.halfyear{background:rgba(20,184,166,0.12);color:#5eead4;border:1px solid rgba(20,184,166,0.25)}
+.quarterly{background:rgba(16,185,129,0.12);color:#6ee7b7;border:1px solid rgba(16,185,129,0.25)}
+.onemonth{background:rgba(14,165,233,0.12);color:#7dd3fc;border:1px solid rgba(14,165,233,0.25)}
+.new-badge{background:rgba(107,114,128,0.15);color:#d1d5db;border:1px solid rgba(107,114,128,0.25)}
+
+/* Order Status */
+.st-open{background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.25)}
+.st-assigned{background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.25)}
+.st-review{background:rgba(234,179,8,0.15);color:#fde047;border:1px solid rgba(234,179,8,0.25)}
+.st-revision{background:rgba(249,115,22,0.15);color:#fdba74;border:1px solid rgba(249,115,22,0.25)}
+.st-done{background:rgba(34,197,94,0.12);color:#86efac;border:1px solid rgba(34,197,94,0.25)}
+.st-dispute{background:rgba(239,68,68,0.12);color:#fca5a5;border:1px solid rgba(239,68,68,0.25)}
+.st-cancel{background:rgba(107,114,128,0.15);color:#d1d5db;border:1px solid rgba(107,114,128,0.25)}
+</style></head><body>
+<div>
+  <div class="label">Rank Tiers</div>
+  <div class="row">
+    <span class="badge bronze">Bronze</span>
+    <span class="badge silver">Silver</span>
+    <span class="badge gold">Gold</span>
+    <span class="badge platinum">Platinum</span>
+    <span class="badge elite">Elite</span>
+  </div>
+</div>
+<div>
+  <div class="label">Tenure Badges</div>
+  <div class="row">
+    <span class="badge new-badge">New</span>
+    <span class="badge onemonth">1 Month</span>
+    <span class="badge quarterly">Quarterly</span>
+    <span class="badge halfyear">Half Year</span>
+    <span class="badge veteran">Veteran</span>
+  </div>
+</div>
+<div>
+  <div class="label">Order Status</div>
+  <div class="row">
+    <span class="badge st-open">OPEN</span>
+    <span class="badge st-open">BIDDING</span>
+    <span class="badge st-assigned">ASSIGNED</span>
+    <span class="badge st-assigned">IN_PROGRESS</span>
+    <span class="badge st-review">SUBMITTED</span>
+    <span class="badge st-review">UNDER_REVIEW</span>
+    <span class="badge st-revision">REVISION_REQUESTED</span>
+    <span class="badge st-done">COMPLETED</span>
+    <span class="badge st-dispute">DISPUTED</span>
+    <span class="badge st-cancel">CANCELLED</span>
+    <span class="badge st-cancel">REFUNDED</span>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#111827;padding:24px;display:flex;flex-direction:column;gap:14px}
+.label{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4b5563;margin-bottom:6px}
+.field-label{font-size:11px;font-weight:600;color:#9ca3af;margin-bottom:5px;display:block}
+input,textarea,select{width:100%;max-width:340px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:11px 14px;color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;outline:none}
+input::placeholder,textarea::placeholder{color:#4b5563}
+.input-focus{border-color:#6366f1;background:rgba(99,102,241,0.05)}
+.input-error{border-color:rgba(239,68,68,0.5);background:rgba(239,68,68,0.05)}
+.error-hint{font-size:11px;color:#fca5a5;margin-top:4px}
+textarea{resize:none;height:80px}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+</style></head><body>
+<div>
+  <div class="label">Input States</div>
+  <div class="row">
+    <div>
+      <label class="field-label">Default</label>
+      <input type="text" placeholder="Order title…"/>
+    </div>
+    <div>
+      <label class="field-label">Focused</label>
+      <input type="text" value="Research Paper — APA" class="input-focus"/>
+    </div>
+    <div>
+      <label class="field-label">Error</label>
+      <input type="text" value="bad@" class="input-error"/>
+      <div class="error-hint">Enter a valid email address</div>
+    </div>
+  </div>
+</div>
+<div>
+  <div class="label">Textarea</div>
+  <textarea placeholder="Describe your assignment in detail (min. 50 characters)…"></textarea>
+</div>
+<div>
+  <div class="label">Select</div>
+  <select style="max-width:340px;color:#9ca3af">
+    <option value="">Academic level</option>
+    <option>High School</option>
+    <option>Undergraduate</option>
+    <option>Masters</option>
+    <option>PhD</option>
+  </select>
+</div>
+</body></html>

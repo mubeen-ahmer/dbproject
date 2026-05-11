@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Order Detail — EduDesk</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:#0f1724;color:#fff}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#374151;border-radius:99px}
+input,textarea,select,button{font-family:'DM Sans',sans-serif}
+</style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const {useState,useRef,useEffect}=React;
+const T={sidebar:'#0a0f1a',bg:'#0f1724',card:'#141e2e',cardHov:'#182235',border:'rgba(255,255,255,0.07)',borderMed:'rgba(255,255,255,0.12)',indigo:'#6366f1',indigoHov:'#818cf8',indigoFaint:'rgba(99,102,241,0.12)',teal:'#14b8a6',tealFaint:'rgba(20,184,166,0.1)',fg1:'#f3f4f6',fg2:'#9ca3af',fg3:'#6b7280',fg4:'#374151',green:'#22c55e',greenFaint:'rgba(34,197,94,0.12)',yellow:'#eab308',yellowFaint:'rgba(234,179,8,0.12)',red:'#ef4444',redFaint:'rgba(239,68,68,0.1)',orange:'#f97316',amber:'#f59e0b'};
+
+const ORDER={id:'ORD-042',title:'Critical Analysis — Hamlet Act III',subject:'English Literature',service:'Argumentative Essay',level:'Undergraduate',pages:5,deadline:'2025-05-01',citation:'APA',status:'BIDDING',created:'Apr 20, 2025',instructions:'Write a critical analysis of Act III of Hamlet, focusing on the theme of moral corruption and its manifestation through the characters of Claudius and Hamlet. The essay should present a clear thesis in the introduction and support it with textual evidence from the play. Please include at least 5 peer-reviewed scholarly sources (from JSTOR or similar databases). Structure: Introduction with thesis, 3 body paragraphs, counterargument, conclusion. My professor expects APA 7th edition citations throughout.'};
+
+const BIDS=[
+  {id:1,name:'James R.',initials:'JR',gradient:'135deg,#6366f1,#818cf8',tier:'Gold',tenure:'Veteran',rating:4.9,reviews:64,orders:82,price:48,deadline:'Apr 28, 2025',pitch:'I have a doctorate in English Literature with 5 years of experience writing Shakespearean analyses. I can deliver a nuanced, well-sourced essay that clearly argues the moral corruption theme through both characters. APA 7th throughout.',subjects:['English Literature','Creative Writing','History'],badge:'Top Rated'},
+  {id:2,name:'Sarah K.',initials:'SK',gradient:'135deg,#14b8a6,#5eead4',tier:'Platinum',tenure:'Veteran',rating:4.8,reviews:41,orders:55,price:52,deadline:'Apr 29, 2025',pitch:'Shakespeare is my specialty. I\'ve written over 30 Hamlet-specific essays across various academic levels. I\'ll make sure the thesis is clearly stated and each body paragraph directly supports it with strong textual evidence.',subjects:['English Literature','Philosophy','Linguistics'],badge:null},
+  {id:3,name:'Daniel M.',initials:'DM',gradient:'135deg,#f59e0b,#fcd34d',tier:'Silver',tenure:'Quarterly',rating:4.5,reviews:18,orders:24,price:42,deadline:'Apr 30, 2025',pitch:'I can deliver a well-structured critical analysis with proper APA citations and scholarly sources. I have written extensively on Elizabethan drama and moral philosophy in Shakespeare\'s tragedies.',subjects:['English Literature','History','Philosophy'],badge:null},
+  {id:4,name:'Priya N.',initials:'PN',gradient:'135deg,#8b5cf6,#a78bfa',tier:'Gold',tenure:'Half Year',rating:4.7,reviews:29,orders:38,price:50,deadline:'Apr 28, 2025',pitch:'I specialize in literary criticism and have a Master\'s in English Literature. My approach will clearly link Claudius\'s political corruption with Hamlet\'s psychological deterioration, supporting the moral corruption thesis throughout.',subjects:['English Literature','Gender Studies','Film Studies'],badge:null},
+];
+
+const CHAT_MSGS=[
+  {id:1,from:'writer',name:'James R.',text:'Hi! I\'ve read through the brief carefully. I\'ll structure the analysis around the moral corruption theme with a clear thesis. Shall I focus more on Claudius or split evenly between both characters?',time:'10:04 AM'},
+  {id:2,from:'student',text:'Please give roughly equal weight to both characters — my professor specifically mentioned she wants both discussed in depth.',time:'10:07 AM'},
+  {id:3,from:'writer',name:'James R.',text:'Perfect. I\'ll devote one body paragraph to Claudius, one to Hamlet, and a third to their moral contrast. Strong counterargument in paragraph 4, then conclusion. Works?',time:'10:09 AM'},
+  {id:4,from:'student',text:'That structure sounds exactly right. Also make sure the scholarly sources are from reputable journals — JSTOR preferred.',time:'10:12 AM'},
+];
+
+function IconEl({children,size=18,stroke='currentColor',sw=1.8,style={}}){
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={style}>{children}</svg>;
+}
+function Badge({children,variant='indigo',size='sm'}){
+  const map={indigo:{bg:'rgba(99,102,241,0.15)',color:'#a5b4fc',b:'rgba(99,102,241,0.25)'},teal:{bg:'rgba(20,184,166,0.12)',color:'#5eead4',b:'rgba(20,184,166,0.25)'},gold:{bg:'rgba(234,179,8,0.15)',color:'#fde047',b:'rgba(234,179,8,0.25)'},blue:{bg:'rgba(59,130,246,0.15)',color:'#93c5fd',b:'rgba(59,130,246,0.25)'},green:{bg:'rgba(34,197,94,0.12)',color:'#86efac',b:'rgba(34,197,94,0.25)'},red:{bg:'rgba(239,68,68,0.12)',color:'#fca5a5',b:'rgba(239,68,68,0.25)'},orange:{bg:'rgba(249,115,22,0.12)',color:'#fdba74',b:'rgba(249,115,22,0.25)'},gray:{bg:'rgba(107,114,128,0.15)',color:'#d1d5db',b:'rgba(107,114,128,0.25)'},amber:{bg:'rgba(180,83,9,0.2)',color:'#fbbf24',b:'rgba(180,83,9,0.3)'},purple:{bg:'rgba(168,85,247,0.15)',color:'#d8b4fe',b:'rgba(168,85,247,0.25)'}};
+  const v=map[variant]||map.indigo;
+  const p=size==='xs'?'2px 6px':'3px 9px';const fs=size==='xs'?10:11;
+  return <span style={{display:'inline-flex',alignItems:'center',padding:p,borderRadius:999,fontSize:fs,fontWeight:600,background:v.bg,color:v.color,border:`1px solid ${v.b}`,whiteSpace:'nowrap'}}>{children}</span>;
+}
+function Avatar({initials='?',size=36,gradient='135deg,#6366f1,#818cf8'}){
+  return <div style={{width:size,height:size,borderRadius:999,background:`linear-gradient(${gradient})`,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:size*0.38,color:'#fff',flexShrink:0}}>{initials}</div>;
+}
+const tierV={Bronze:'amber',Silver:'gray',Gold:'gold',Platinum:'teal',Elite:'purple'};
+const tenureV={Veteran:'indigo','Half Year':'teal',Quarterly:'green','1 Month':'blue',New:'gray'};
+
+/* PAYMENT MODAL */
+function PaymentModal({bid,onClose,onConfirm}){
+  const [step,setStep]=useState(1);
+  const [card,setCard]=useState({num:'',exp:'',cvv:''});
+  const [processing,setProcessing]=useState(false);
+  if(step===2) return(
+    <div style={{position:'fixed',inset:0,zIndex:400,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.7)',backdropFilter:'blur(6px)'}}>
+      <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:18,padding:'36px',maxWidth:400,width:'90%',textAlign:'center'}}>
+        <div style={{width:64,height:64,background:'rgba(34,197,94,0.12)',border:'1px solid rgba(34,197,94,0.25)',borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px'}}>
+          <IconEl stroke="#86efac" size={28}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></IconEl>
+        </div>
+        <h2 style={{fontSize:'1.15rem',fontWeight:700,marginBottom:8}}>Payment held in escrow</h2>
+        <p style={{fontSize:13,color:T.fg3,lineHeight:1.6,marginBottom:6}}><strong style={{color:T.fg1}}>${bid.price}.00</strong> is now securely held. {bid.name} has been notified and will begin working on your paper.</p>
+        <div style={{background:'rgba(99,102,241,0.07)',border:`1px solid rgba(99,102,241,0.18)`,borderRadius:10,padding:'12px 14px',margin:'16px 0',fontSize:12,color:'#a5b4fc',lineHeight:1.5}}>
+          Funds will only be released to the writer after you accept the completed work. You're protected throughout.
+        </div>
+        <button onClick={()=>{onConfirm(bid);onClose();}} style={{width:'100%',padding:'12px',borderRadius:8,background:T.indigo,color:'#fff',border:'none',fontSize:14,fontWeight:600,cursor:'pointer'}}>Go to order</button>
+      </div>
+    </div>
+  );
+  const inp={width:'100%',background:'rgba(255,255,255,0.05)',border:`1px solid ${T.border}`,borderRadius:8,padding:'10px 13px',color:'#fff',fontSize:13,outline:'none',fontFamily:'DM Mono,monospace',letterSpacing:'0.05em'};
+  return(
+    <div style={{position:'fixed',inset:0,zIndex:400,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.7)',backdropFilter:'blur(6px)'}}>
+      <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:18,padding:'28px',maxWidth:420,width:'90%'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}}>
+          <div><div style={{fontSize:15,fontWeight:700,color:T.fg1}}>Confirm &amp; pay</div><div style={{fontSize:12,color:T.fg3,marginTop:2}}>Payment held in escrow until you approve</div></div>
+          <button onClick={onClose} style={{background:'none',border:'none',color:T.fg3,cursor:'pointer'}}><IconEl><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconEl></button>
+        </div>
+        {/* Order summary */}
+        <div style={{background:'rgba(255,255,255,0.03)',border:`1px solid ${T.border}`,borderRadius:10,padding:'12px 14px',marginBottom:20}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <Avatar initials={bid.initials} size={32} gradient={bid.gradient}/>
+              <div><div style={{fontSize:12,fontWeight:600,color:T.fg1}}>{bid.name}</div><div style={{fontSize:10,color:T.fg3}}>Selected writer</div></div>
+            </div>
+            <div style={{fontSize:16,fontWeight:700,color:T.fg1}}>${bid.price}.00</div>
+          </div>
+          <div style={{fontSize:11,color:T.fg3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{ORDER.title}</div>
+          <div style={{display:'flex',gap:16,marginTop:8,fontSize:11,color:T.fg3}}>
+            <span>Deadline: {bid.deadline}</span>
+            <span>Includes: 3 free revisions</span>
+          </div>
+        </div>
+        {/* Card form */}
+        <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:16}}>
+          <div>
+            <label style={{display:'block',fontSize:11,fontWeight:600,color:T.fg3,marginBottom:5}}>Card number</label>
+            <input value={card.num} onChange={e=>setCard(c=>({...c,num:e.target.value.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim()}))} placeholder="4242 4242 4242 4242" style={inp} onFocus={e=>e.target.style.borderColor=T.indigo} onBlur={e=>e.target.style.borderColor=T.border}/>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+            <div>
+              <label style={{display:'block',fontSize:11,fontWeight:600,color:T.fg3,marginBottom:5}}>Expiry</label>
+              <input value={card.exp} onChange={e=>setCard(c=>({...c,exp:e.target.value}))} placeholder="MM / YY" style={inp} onFocus={e=>e.target.style.borderColor=T.indigo} onBlur={e=>e.target.style.borderColor=T.border}/>
+            </div>
+            <div>
+              <label style={{display:'block',fontSize:11,fontWeight:600,color:T.fg3,marginBottom:5}}>CVV</label>
+              <input value={card.cvv} onChange={e=>setCard(c=>({...c,cvv:e.target.value.slice(0,4)}))} placeholder="•••" style={inp} onFocus={e=>e.target.style.borderColor=T.indigo} onBlur={e=>e.target.style.borderColor=T.border}/>
+            </div>
+          </div>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:16,fontSize:11,color:T.fg3}}>
+          <IconEl size={14} stroke={T.green}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></IconEl>
+          Demo only — no real payment processed. Card details are not stored.
+        </div>
+        <button onClick={()=>{setProcessing(true);setTimeout(()=>{setProcessing(false);setStep(2);},1400);}} disabled={processing} style={{width:'100%',padding:'12px',borderRadius:8,background:processing?'rgba(99,102,241,0.5)':T.indigo,color:'#fff',border:'none',fontSize:14,fontWeight:600,cursor:processing?'not-allowed':'pointer',transition:'background 0.15s'}}>
+          {processing?'Processing…':`Pay $${bid.price}.00 — Hold in Escrow`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* CHAT */
+function ChatTab(){
+  const [msgs,setMsgs]=useState(CHAT_MSGS);
+  const [input,setInput]=useState('');
+  const [warn,setWarn]=useState(false);
+  const bottomRef=useRef();
+  useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:'smooth'});},[msgs]);
+  const send=()=>{
+    if(!input.trim())return;
+    if(/\d{7,}|@[a-z]+\.[a-z]+|https?:\/\//i.test(input)){setWarn(true);setTimeout(()=>setWarn(false),4000);return;}
+    setMsgs(m=>[...m,{id:Date.now(),from:'student',text:input,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}]);
+    setInput('');
+  };
+  return(
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div style={{flex:1,overflowY:'auto',padding:'20px',display:'flex',flexDirection:'column',gap:14}}>
+        {msgs.map(m=>(
+          <div key={m.id} style={{display:'flex',flexDirection:m.from==='student'?'row-reverse':'row',gap:8,alignItems:'flex-end'}}>
+            {m.from==='writer'&&<Avatar initials="JR" size={28}/>}
+            <div style={{maxWidth:'72%'}}>
+              {m.from==='writer'&&<div style={{fontSize:10,color:T.fg3,marginBottom:3,marginLeft:2}}>{m.name}</div>}
+              <div style={{background:m.from==='student'?T.indigo:'rgba(255,255,255,0.06)',borderRadius:m.from==='student'?'14px 14px 4px 14px':'14px 14px 14px 4px',padding:'10px 13px',fontSize:13,lineHeight:1.55,color:'#fff'}}>{m.text}</div>
+              <div style={{fontSize:10,color:T.fg4,marginTop:3,textAlign:m.from==='student'?'right':'left'}}>{m.time}</div>
+            </div>
+          </div>
+        ))}
+        {warn&&<div style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.25)',borderRadius:10,padding:'10px 13px',fontSize:12,color:'#fca5a5'}}>⚠ Sharing contact info removes your buyer protection. Message not sent.</div>}
+        <div ref={bottomRef}/>
+      </div>
+      <div style={{padding:'12px 16px',borderTop:`1px solid ${T.border}`,flexShrink:0,display:'flex',gap:8,alignItems:'flex-end'}}>
+        <textarea value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}} placeholder="Message James R. — Enter to send" rows={1} style={{flex:1,background:'rgba(255,255,255,0.05)',border:`1px solid ${T.borderMed}`,borderRadius:10,padding:'10px 13px',color:'#fff',fontSize:13,outline:'none',resize:'none',lineHeight:1.5,fontFamily:'DM Sans,sans-serif'}}/>
+        <button onClick={send} style={{width:38,height:38,borderRadius:10,background:T.indigo,border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+          <IconEl stroke="#fff"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></IconEl>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* BID CARD */
+function BidCard({bid,onSelect,onProfile,selected}){
+  const [expanded,setExpanded]=useState(false);
+  return(
+    <div style={{background:selected?'rgba(99,102,241,0.07)':T.card,border:`1px solid ${selected?'rgba(99,102,241,0.35)':T.border}`,borderRadius:14,overflow:'hidden',transition:'all 0.2s'}}>
+      <div style={{padding:'18px 20px'}}>
+        <div style={{display:'flex',gap:14,alignItems:'flex-start'}}>
+          <button onClick={()=>onProfile(bid)} style={{background:'none',border:'none',cursor:'pointer',flexShrink:0}}>
+            <Avatar initials={bid.initials} size={48} gradient={bid.gradient}/>
+          </button>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:4}}>
+              <button onClick={()=>onProfile(bid)} style={{background:'none',border:'none',cursor:'pointer',padding:0,fontSize:14,fontWeight:700,color:T.fg1,textDecoration:'none'}}>{bid.name}</button>
+              {bid.badge&&<span style={{display:'inline-flex',alignItems:'center',gap:4,padding:'2px 8px',borderRadius:99,background:'rgba(245,158,11,0.15)',border:'1px solid rgba(245,158,11,0.3)',fontSize:10,fontWeight:700,color:'#fcd34d'}}>⭐ {bid.badge}</span>}
+              <Badge variant={tierV[bid.tier]||'gray'} size="xs">{bid.tier}</Badge>
+              <Badge variant={tenureV[bid.tenure]||'gray'} size="xs">{bid.tenure}</Badge>
+            </div>
+            <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:8,flexWrap:'wrap'}}>
+              <span style={{fontSize:12,color:T.amber,fontWeight:600}}>{'★'.repeat(Math.round(bid.rating))} {bid.rating}</span>
+              <span style={{fontSize:11,color:T.fg3}}>({bid.reviews} reviews)</span>
+              <span style={{fontSize:11,color:T.fg3}}>{bid.orders} orders completed</span>
+            </div>
+            <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:10}}>
+              {bid.subjects.map(s=><Badge key={s} variant="gray" size="xs">{s}</Badge>)}
+            </div>
+            <p style={{fontSize:13,color:T.fg2,lineHeight:1.55,marginBottom:0}}>{expanded?bid.pitch:bid.pitch.slice(0,120)+'…'}
+              <button onClick={()=>setExpanded(!expanded)} style={{background:'none',border:'none',color:T.indigo,fontSize:12,cursor:'pointer',marginLeft:4}}>{expanded?'Less':'Read more'}</button>
+            </p>
+          </div>
+          <div style={{flexShrink:0,textAlign:'right',minWidth:100}}>
+            <div style={{fontSize:'1.4rem',fontWeight:700,color:T.fg1,letterSpacing:'-0.02em'}}>${bid.price}</div>
+            <div style={{fontSize:11,color:T.fg3,marginBottom:12}}>by {bid.deadline}</div>
+            <button onClick={()=>onSelect(bid)} style={{padding:'9px 16px',borderRadius:8,background:selected?'rgba(99,102,241,0.2)':T.indigo,color:selected?'#a5b4fc':'#fff',border:selected?'1px solid rgba(99,102,241,0.4)':'none',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all 0.15s',width:'100%'}}
+              onMouseEnter={e=>{if(!selected)e.currentTarget.style.background=T.indigoHov;}} onMouseLeave={e=>{if(!selected)e.currentTarget.style.background=T.indigo;}}>
+              {selected?'✓ Selected':'Select writer'}
+            </button>
+            <button onClick={()=>onProfile(bid)} style={{padding:'6px 16px',borderRadius:8,background:'transparent',color:T.fg3,border:`1px solid ${T.border}`,fontSize:11,fontWeight:500,cursor:'pointer',width:'100%',marginTop:6,transition:'all 0.15s'}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.2)';e.currentTarget.style.color=T.fg2;}} onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.fg3;}}>
+              View profile
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* MAIN APP */
+function App(){
+  const [tab,setTab]=useState('bids');
+  const [selectedBid,setSelectedBid]=useState(null);
+  const [payBid,setPayBid]=useState(null);
+  const [confirmed,setConfirmed]=useState(false);
+
+  const handleSelect=bid=>{
+    if(confirmed)return;
+    setSelectedBid(bid);
+    setPayBid(bid);
+  };
+
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:T.bg}}>
+      {/* Top nav */}
+      <div style={{height:56,borderBottom:`1px solid ${T.border}`,display:'flex',alignItems:'center',padding:'0 24px',gap:16,flexShrink:0,background:T.sidebar}}>
+        <a href="student-dashboard.html" style={{display:'flex',alignItems:'center',gap:8,textDecoration:'none',color:T.fg3,fontSize:13,fontWeight:500,transition:'color 0.15s'}}
+          onMouseEnter={e=>e.currentTarget.style.color=T.fg1} onMouseLeave={e=>e.currentTarget.style.color=T.fg3}>
+          <IconEl size={14}><polyline points="15 18 9 12 15 6"/></IconEl>My Orders
+        </a>
+        <span style={{color:T.fg4}}>/</span>
+        <span style={{fontSize:13,color:T.fg2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>{ORDER.title}</span>
+        <div style={{fontFamily:'DM Mono,monospace',fontSize:11,color:T.fg3,background:'rgba(255,255,255,0.04)',border:`1px solid ${T.border}`,borderRadius:6,padding:'3px 10px',flexShrink:0}}>{ORDER.id}</div>
+      </div>
+
+      <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+        {/* Left: order details */}
+        <div style={{width:320,borderRight:`1px solid ${T.border}`,display:'flex',flexDirection:'column',flexShrink:0,overflowY:'auto'}}>
+          <div style={{padding:'20px'}}>
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:15,fontWeight:700,color:T.fg1,marginBottom:8,lineHeight:1.3}}>{ORDER.title}</div>
+              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                {confirmed?<Badge variant="indigo">ASSIGNED</Badge>:<Badge variant="blue">BIDDING</Badge>}
+                <Badge variant="gray" size="xs">{ORDER.service}</Badge>
+              </div>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
+              {[['Subject',ORDER.subject],['Level',ORDER.level],['Pages',`${ORDER.pages} pages`],['Citation',ORDER.citation],['Deadline',ORDER.deadline],['Posted',ORDER.created]].map(([k,v])=>(
+                <div key={k} style={{background:'rgba(255,255,255,0.03)',borderRadius:8,padding:'8px 10px'}}>
+                  <div style={{fontSize:10,color:T.fg4,textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:3}}>{k}</div>
+                  <div style={{fontSize:12,fontWeight:600,color:T.fg2}}>{v}</div>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,color:T.fg4,textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8}}>Instructions</div>
+              <div style={{fontSize:12,color:T.fg3,lineHeight:1.65,background:'rgba(255,255,255,0.03)',borderRadius:10,padding:'12px 14px'}}>{ORDER.instructions}</div>
+            </div>
+            {confirmed&&(
+              <div style={{marginTop:16,background:'rgba(34,197,94,0.08)',border:'1px solid rgba(34,197,94,0.2)',borderRadius:10,padding:'12px 14px'}}>
+                <div style={{fontSize:12,fontWeight:600,color:'#86efac',marginBottom:4}}>Writer selected</div>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <Avatar initials={selectedBid.initials} size={28} gradient={selectedBid.gradient}/>
+                  <div><div style={{fontSize:12,fontWeight:600,color:T.fg1}}>{selectedBid.name}</div><div style={{fontSize:11,color:T.fg3}}>${selectedBid.price} · due {selectedBid.deadline}</div></div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right: tabs */}
+        <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+          <div style={{display:'flex',gap:0,borderBottom:`1px solid ${T.border}`,padding:'0 20px',flexShrink:0}}>
+            {['bids','chat','files'].map(t=>(
+              <button key={t} onClick={()=>setTab(t)} style={{padding:'14px 18px',background:'none',border:'none',borderBottom:`2px solid ${tab===t?T.indigo:'transparent'}`,color:tab===t?T.indigoHov:T.fg3,fontSize:13,fontWeight:tab===t?600:500,cursor:'pointer',textTransform:'capitalize',transition:'all 0.15s',marginBottom:'-1px'}}>
+                {t==='bids'?`Bids (${BIDS.length})`:t==='chat'?'Chat':'Files'}
+              </button>
+            ))}
+          </div>
+
+          {tab==='bids'&&(
+            <div style={{flex:1,overflowY:'auto',padding:'20px',display:'flex',flexDirection:'column',gap:10}}>
+              {confirmed&&<div style={{background:'rgba(34,197,94,0.08)',border:'1px solid rgba(34,197,94,0.2)',borderRadius:10,padding:'12px 16px',fontSize:13,color:'#86efac',display:'flex',alignItems:'center',gap:10}}><IconEl stroke="#86efac" size={16}><polyline points="20 6 9 17 4 12"/></IconEl>You've selected {selectedBid.name}. Chat is now unlocked. Payment is held in escrow.</div>}
+              {BIDS.map(b=>(
+                <BidCard key={b.id} bid={b} selected={selectedBid?.id===b.id} onSelect={handleSelect} onProfile={bid=>window.open(`writer-profile.html?writer=${bid.id}`,'_blank')}/>
+              ))}
+            </div>
+          )}
+          {tab==='chat'&&<ChatTab/>}
+          {tab==='files'&&(
+            <div style={{flex:1,overflowY:'auto',padding:'20px'}}>
+              <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:'32px',textAlign:'center'}}>
+                <IconEl stroke={T.fg4} size={32} style={{marginBottom:12}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></IconEl>
+                <div style={{fontSize:13,color:T.fg3,marginBottom:4}}>No files attached to this order yet.</div>
+                <div style={{fontSize:11,color:T.fg4}}>Writers may upload work here once assigned.</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {payBid&&!confirmed&&<PaymentModal bid={payBid} onClose={()=>{setPayBid(null);setSelectedBid(null);}} onConfirm={()=>setConfirmed(true)}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Mono',monospace;background:#111827;padding:20px;display:flex;flex-direction:column;gap:14px}
+.label{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4b5563;margin-bottom:8px}
+.row{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap}
+.space-block{background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.3);border-radius:3px;display:flex;align-items:flex-end;justify-content:center}
+.space-label{font-size:9px;color:#6b7280;text-align:center;margin-top:4px}
+.sp{display:flex;flex-direction:column;align-items:center}
+
+.radius-row{display:flex;gap:10px;align-items:center}
+.radius-box{width:48px;height:48px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:#818cf8}
+
+.shadow-row{display:flex;gap:16px;flex-wrap:wrap}
+.shadow-box{width:80px;height:50px;background:#1f2937;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#6b7280}
+</style></head><body>
+<div>
+  <div class="label">Spacing Scale</div>
+  <div class="row">
+    <div class="sp"><div class="space-block" style="width:4px;height:4px"></div><div class="space-label">4</div></div>
+    <div class="sp"><div class="space-block" style="width:8px;height:8px"></div><div class="space-label">8</div></div>
+    <div class="sp"><div class="space-block" style="width:12px;height:12px"></div><div class="space-label">12</div></div>
+    <div class="sp"><div class="space-block" style="width:16px;height:16px"></div><div class="space-label">16</div></div>
+    <div class="sp"><div class="space-block" style="width:20px;height:20px"></div><div class="space-label">20</div></div>
+    <div class="sp"><div class="space-block" style="width:24px;height:24px"></div><div class="space-label">24</div></div>
+    <div class="sp"><div class="space-block" style="width:32px;height:32px"></div><div class="space-label">32</div></div>
+    <div class="sp"><div class="space-block" style="width:40px;height:40px"></div><div class="space-label">40</div></div>
+    <div class="sp"><div class="space-block" style="width:48px;height:48px"></div><div class="space-label">48</div></div>
+    <div class="sp"><div class="space-block" style="width:64px;height:64px"></div><div class="space-label">64</div></div>
+  </div>
+</div>
+<div>
+  <div class="label">Border Radius</div>
+  <div class="radius-row">
+    <div class="sp"><div class="radius-box" style="border-radius:4px">4px</div><div class="space-label">sm</div></div>
+    <div class="sp"><div class="radius-box" style="border-radius:6px">6px</div><div class="space-label">md</div></div>
+    <div class="sp"><div class="radius-box" style="border-radius:8px">8px</div><div class="space-label">lg</div></div>
+    <div class="sp"><div class="radius-box" style="border-radius:12px">12px</div><div class="space-label">xl</div></div>
+    <div class="sp"><div class="radius-box" style="border-radius:16px">16px</div><div class="space-label">2xl</div></div>
+    <div class="sp"><div class="radius-box" style="border-radius:999px;width:64px">pill</div><div class="space-label">full</div></div>
+  </div>
+</div>
+<div>
+  <div class="label">Shadows / Elevation</div>
+  <div class="shadow-row">
+    <div class="sp"><div class="shadow-box" style="box-shadow:none;border:1px solid rgba(255,255,255,0.08)">border</div><div class="space-label">card default</div></div>
+    <div class="sp"><div class="shadow-box" style="box-shadow:0 4px 24px rgba(99,102,241,0.3)">indigo</div><div class="space-label">CTA glow</div></div>
+    <div class="sp"><div class="shadow-box" style="box-shadow:0 8px 32px rgba(0,0,0,0.5)">deep</div><div class="space-label">elevated</div></div>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduDesk — Student Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:#0f1724;color:#fff}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#374151;border-radius:99px}
+input,textarea,select,button{font-family:'DM Sans',sans-serif}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+/* ─── TOKENS ─── */
+const T = {
+  sidebar: '#0a0f1a',
+  bg: '#0f1724',
+  card: '#141e2e',
+  cardHov: '#182235',
+  border: 'rgba(255,255,255,0.07)',
+  borderMed: 'rgba(255,255,255,0.12)',
+  indigo: '#6366f1',
+  indigoHov: '#818cf8',
+  indigoFaint: 'rgba(99,102,241,0.12)',
+  teal: '#14b8a6',
+  tealFaint: 'rgba(20,184,166,0.1)',
+  white: '#ffffff',
+  fg1: '#f3f4f6',
+  fg2: '#9ca3af',
+  fg3: '#6b7280',
+  fg4: '#374151',
+  green: '#22c55e', greenFaint: 'rgba(34,197,94,0.12)',
+  yellow: '#eab308', yellowFaint: 'rgba(234,179,8,0.12)',
+  red: '#ef4444', redFaint: 'rgba(239,68,68,0.1)',
+  orange: '#f97316', orangeFaint: 'rgba(249,115,22,0.1)',
+  blue: '#3b82f6', blueFaint: 'rgba(59,130,246,0.12)',
+  amber: '#f59e0b',
+};
+
+/* ─── FAKE DATA ─── */
+const ORDERS = [
+  {id:'ORD-042',title:'Critical Analysis — Hamlet Act III',subject:'English Literature',service:'Essay',level:'Undergraduate',pages:5,deadline:'2025-05-01',citation:'APA',status:'BIDDING',bids:4,price:'$45',created:'Apr 20, 2025'},
+  {id:'ORD-039',title:'SWOT Analysis — Tesla Inc.',subject:'Business Administration',service:'Business Report',level:'Undergraduate',pages:8,deadline:'2025-04-25',citation:'Harvard',status:'IN_PROGRESS',bids:1,price:'$80',created:'Apr 17, 2025'},
+  {id:'ORD-035',title:'Lab Report — Acid-Base Titration',subject:'Chemistry',service:'Lab Report',level:'Undergraduate',pages:6,deadline:'2025-04-30',citation:'APA',status:'UNDER_REVIEW',bids:1,price:'$60',created:'Apr 12, 2025'},
+  {id:'ORD-031',title:'Annotated Bibliography — Climate Policy',subject:'Environmental Science',service:'Annotated Bibliography',level:'Masters',pages:4,deadline:'2025-04-15',citation:'Chicago',status:'COMPLETED',bids:1,price:'$55',created:'Apr 1, 2025'},
+  {id:'ORD-028',title:'Argumentative Essay — Universal Basic Income',subject:'Economics',service:'Essay',level:'Undergraduate',pages:3,deadline:'2025-04-10',citation:'MLA',status:'COMPLETED',bids:3,price:'$28',created:'Mar 28, 2025'},
+];
+
+const NOTIFS = [
+  {id:1,type:'bid',text:'James R. placed a bid of $48 on your order "Hamlet Act III".',time:'2 min ago',read:false},
+  {id:2,type:'bid',text:'Sarah K. placed a bid of $52 on your order "Hamlet Act III".',time:'15 min ago',read:false},
+  {id:3,type:'submit',text:'Your paper "SWOT Analysis — Tesla Inc." has been submitted. Review it now.',time:'1 hr ago',read:false},
+  {id:4,type:'info',text:'Auto-accept reminder: Your paper will auto-accept in 4 days if not reviewed.',time:'3 hrs ago',read:true},
+  {id:5,type:'complete',text:'Order "Annotated Bibliography" marked as completed. Leave a review!',time:'Apr 15',read:true},
+];
+
+const LEADERBOARD = [
+  {rank:1,name:'Marcus T.',role:'Student',points:1240,tier:'Elite',tenure:'Veteran',orders:47},
+  {rank:2,name:'Priya S.',role:'Student',points:980,tier:'Platinum',tenure:'Veteran',orders:38},
+  {rank:3,name:'You (Jane)',role:'Student',points:320,tier:'Gold',tenure:'Veteran',orders:12,isMe:true},
+  {rank:4,name:'Carlos M.',role:'Student',points:280,tier:'Silver',tenure:'Half Year',orders:9},
+  {rank:5,name:'Aisha B.',role:'Student',points:210,tier:'Silver',tenure:'Quarterly',orders:7},
+  {rank:6,name:'Leon F.',role:'Student',points:160,tier:'Silver',tenure:'1 Month',orders:5},
+  {rank:7,name:'Nina W.',role:'Student',points:90,tier:'Bronze',tenure:'New',orders:3},
+];
+
+const CHAT_MSGS = [
+  {id:1,from:'writer',name:'James R.',text:'Hi! I\'ve reviewed your order brief. I have extensive experience with Shakespearean literature. I can deliver a thorough analysis by April 28th.',time:'10:04 AM'},
+  {id:2,from:'student',text:'That sounds great! Can you include at least 5 scholarly sources?',time:'10:06 AM'},
+  {id:3,from:'writer',name:'James R.',text:'Absolutely. I\'ll use JSTOR and Google Scholar. I\'ll also follow APA 7th edition throughout.',time:'10:08 AM'},
+  {id:4,from:'student',text:'Perfect. Please make sure the thesis is clearly argued in the intro. The brief has details about what my prof expects.',time:'10:10 AM'},
+  {id:5,from:'writer',name:'James R.',text:'Understood. I\'ll structure it as: Intro → Thesis → 3 body sections → Counterargument → Conclusion. Working on it now!',time:'10:12 AM'},
+];
+
+/* ─── SHARED UI ─── */
+function Icon({d,size=18,stroke='currentColor',sw=1.8,fill='none',viewBox='0 0 24 24',style={}}) {
+  return <svg width={size} height={size} viewBox={viewBox} fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={style}><path d={d}/></svg>;
+}
+function IconEl({children,size=18,stroke='currentColor',sw=1.8,viewBox='0 0 24 24',style={}}) {
+  return <svg width={size} height={size} viewBox={viewBox} fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={style}>{children}</svg>;
+}
+
+function Badge({children,variant='indigo',size='sm'}) {
+  const map={
+    indigo:{bg:'rgba(99,102,241,0.15)',color:'#a5b4fc',b:'rgba(99,102,241,0.25)'},
+    teal:{bg:'rgba(20,184,166,0.12)',color:'#5eead4',b:'rgba(20,184,166,0.25)'},
+    gold:{bg:'rgba(234,179,8,0.15)',color:'#fde047',b:'rgba(234,179,8,0.25)'},
+    blue:{bg:'rgba(59,130,246,0.15)',color:'#93c5fd',b:'rgba(59,130,246,0.25)'},
+    green:{bg:'rgba(34,197,94,0.12)',color:'#86efac',b:'rgba(34,197,94,0.25)'},
+    red:{bg:'rgba(239,68,68,0.12)',color:'#fca5a5',b:'rgba(239,68,68,0.25)'},
+    orange:{bg:'rgba(249,115,22,0.12)',color:'#fdba74',b:'rgba(249,115,22,0.25)'},
+    gray:{bg:'rgba(107,114,128,0.15)',color:'#d1d5db',b:'rgba(107,114,128,0.25)'},
+    amber:{bg:'rgba(180,83,9,0.2)',color:'#fbbf24',b:'rgba(180,83,9,0.3)'},
+    purple:{bg:'rgba(168,85,247,0.15)',color:'#d8b4fe',b:'rgba(168,85,247,0.25)'},
+  };
+  const v=map[variant]||map.indigo;
+  const p=size==='xs'?'2px 6px':'3px 9px';
+  const fs=size==='xs'?10:11;
+  return <span style={{display:'inline-flex',alignItems:'center',padding:p,borderRadius:999,fontSize:fs,fontWeight:600,background:v.bg,color:v.color,border:`1px solid ${v.b}`,whiteSpace:'nowrap'}}>{children}</span>;
+}
+
+function statusBadge(status) {
+  const map={
+    OPEN:['blue','OPEN'],BIDDING:['blue','BIDDING'],
+    ASSIGNED:['indigo','ASSIGNED'],IN_PROGRESS:['indigo','IN PROGRESS'],
+    SUBMITTED:['gold','SUBMITTED'],UNDER_REVIEW:['gold','UNDER REVIEW'],
+    REVISION_REQUESTED:['orange','REVISION'],
+    COMPLETED:['green','COMPLETED'],DISPUTED:['red','DISPUTED'],
+    CANCELLED:['gray','CANCELLED'],REFUNDED:['gray','REFUNDED'],
+  };
+  const [v,l]=map[status]||['gray',status];
+  return <Badge variant={v}>{l}</Badge>;
+}
+
+function tierBadge(tier) {
+  const m={Bronze:'amber',Silver:'gray',Gold:'gold',Platinum:'teal',Elite:'purple'};
+  return <Badge variant={m[tier]||'gray'} size="xs">{tier}</Badge>;
+}
+
+function Avatar({initials='?',size=36,gradient='135deg,#6366f1,#818cf8'}) {
+  return <div style={{width:size,height:size,borderRadius:999,background:`linear-gradient(${gradient})`,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:size*0.38,color:'#fff',flexShrink:0,letterSpacing:'-0.02em'}}>{initials}</div>;
+}
+
+/* ─── CHAT ─── */
+function ChatPanel({orderId,orderTitle,writerName,onClose}) {
+  const [msgs,setMsgs]=useState(CHAT_MSGS);
+  const [input,setInput]=useState('');
+  const [warn,setWarn]=useState(false);
+  const bottomRef=useRef();
+  useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:'smooth'}); },[msgs]);
+
+  const send=()=>{
+    if(!input.trim()) return;
+    const blocked = /\d{7,}|@[a-z]+\.[a-z]+|https?:\/\//i.test(input);
+    if(blocked){setWarn(true);setTimeout(()=>setWarn(false),4000);return;}
+    setMsgs(m=>[...m,{id:Date.now(),from:'student',text:input,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}]);
+    setInput('');
+  };
+
+  return (
+    <div style={{position:'fixed',inset:0,zIndex:200,display:'flex',alignItems:'stretch',justifyContent:'flex-end'}}>
+      <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.5)',backdropFilter:'blur(4px)'}} onClick={onClose}/>
+      <div style={{position:'relative',width:420,background:T.sidebar,display:'flex',flexDirection:'column',borderLeft:`1px solid ${T.border}`,animation:'slideIn 0.25s ease'}}>
+        {/* Header */}
+        <div style={{padding:'16px 20px',borderBottom:`1px solid ${T.border}`,display:'flex',alignItems:'center',gap:12,flexShrink:0}}>
+          <Avatar initials="JR" size={38} gradient="135deg,#6366f1,#818cf8"/>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:14,fontWeight:600,color:T.fg1}}>{writerName}</div>
+            <div style={{fontSize:11,color:T.green,display:'flex',alignItems:'center',gap:4,marginTop:1}}>
+              <span style={{width:6,height:6,background:T.green,borderRadius:99,flexShrink:0}}/>Online
+            </div>
+          </div>
+          <div style={{fontSize:11,color:T.fg3,background:T.indigoFaint,border:`1px solid rgba(99,102,241,0.2)`,borderRadius:6,padding:'3px 8px',fontFamily:'DM Mono,monospace'}}>{orderId}</div>
+          <button onClick={onClose} style={{background:'none',border:'none',color:T.fg3,cursor:'pointer',padding:4}}>
+            <IconEl><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconEl>
+          </button>
+        </div>
+        {/* Context strip */}
+        <div style={{padding:'10px 20px',background:'rgba(99,102,241,0.06)',borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
+          <div style={{fontSize:11,color:T.fg3}}>Order</div>
+          <div style={{fontSize:12,fontWeight:600,color:T.fg2,marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orderTitle}</div>
+        </div>
+        {/* Msgs */}
+        <div style={{flex:1,overflowY:'auto',padding:'20px',display:'flex',flexDirection:'column',gap:14}}>
+          {msgs.map(m=>(
+            <div key={m.id} style={{display:'flex',flexDirection:m.from==='student'?'row-reverse':'row',gap:8,alignItems:'flex-end'}}>
+              {m.from==='writer' && <Avatar initials="JR" size={28} gradient="135deg,#6366f1,#818cf8"/>}
+              <div style={{maxWidth:'75%'}}>
+                {m.from==='writer' && <div style={{fontSize:10,color:T.fg3,marginBottom:3,marginLeft:2}}>{m.name}</div>}
+                <div style={{background:m.from==='student'?T.indigo:'rgba(255,255,255,0.06)',borderRadius:m.from==='student'?'14px 14px 4px 14px':'14px 14px 14px 4px',padding:'10px 13px',fontSize:13,lineHeight:1.55,color:m.from==='student'?'#fff':T.fg1}}>
+                  {m.text}
+                </div>
+                <div style={{fontSize:10,color:T.fg4,marginTop:3,textAlign:m.from==='student'?'right':'left'}}>{m.time}</div>
+              </div>
+            </div>
+          ))}
+          {warn && (
+            <div style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.25)',borderRadius:10,padding:'10px 13px',fontSize:12,color:'#fca5a5',lineHeight:1.5}}>
+              ⚠ Sharing contact info removes your buyer protection. Message not sent.
+            </div>
+          )}
+          <div ref={bottomRef}/>
+        </div>
+        {/* Input */}
+        <div style={{padding:'12px 16px',borderTop:`1px solid ${T.border}`,flexShrink:0}}>
+          <div style={{display:'flex',gap:8,alignItems:'flex-end'}}>
+            <textarea
+              value={input} onChange={e=>setInput(e.target.value)}
+              onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}}
+              placeholder="Type a message… (Enter to send)"
+              rows={1}
+              style={{flex:1,background:'rgba(255,255,255,0.05)',border:`1px solid ${T.borderMed}`,borderRadius:10,padding:'10px 13px',color:'#fff',fontSize:13,outline:'none',resize:'none',lineHeight:1.5,fontFamily:'DM Sans,sans-serif'}}
+            />
+            <button onClick={send} style={{width:38,height:38,borderRadius:10,background:T.indigo,border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'background 0.15s'}}
+              onMouseEnter={e=>e.currentTarget.style.background=T.indigoHov}
+              onMouseLeave={e=>e.currentTarget.style.background=T.indigo}>
+              <IconEl stroke="#fff"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></IconEl>
+            </button>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
+    </div>
+  );
+}
+
+/* ─── SIDEBAR ─── */
+function Sidebar({page,setPage,notifCount}) {
+  const nav=[
+    {id:'home',label:'Overview',icon:<><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>},
+    {id:'new-order',label:'New Order',icon:<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>},
+    {id:'my-orders',label:'My Orders',icon:<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></>},
+    {id:'notifications',label:'Notifications',badge:notifCount,icon:<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>},
+    {id:'leaderboard',label:'Leaderboard',icon:<><polyline points="18 20 18 10"/><polyline points="12 20 12 4"/><polyline points="6 20 6 14"/></>},
+  ];
+  return (
+    <div style={{width:220,background:T.sidebar,borderRight:`1px solid ${T.border}`,display:'flex',flexDirection:'column',flexShrink:0,height:'100%'}}>
+      {/* Logo */}
+      <div style={{padding:'20px 16px 16px',borderBottom:`1px solid ${T.border}`}}>
+        <a href="index.html" style={{display:'flex',alignItems:'center',gap:10,textDecoration:'none'}}>
+          <div style={{width:32,height:32,background:'linear-gradient(135deg,#6366f1,#818cf8)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:13,color:'#fff',flexShrink:0}}>Ed</div>
+          <span style={{fontSize:'1rem',fontWeight:700,color:'#fff'}}>EduDesk</span>
+        </a>
+        <div style={{marginTop:12,padding:'8px 10px',background:T.indigoFaint,borderRadius:8,border:`1px solid rgba(99,102,241,0.2)`}}>
+          <div style={{fontSize:10,color:T.fg3,letterSpacing:'0.06em',textTransform:'uppercase',fontWeight:600}}>Signed in as</div>
+          <div style={{fontSize:12,fontWeight:600,color:T.fg1,marginTop:2}}>Jane Appleseed</div>
+          <div style={{display:'flex',gap:4,marginTop:4}}><Badge variant="gold" size="xs">Gold</Badge><Badge variant="indigo" size="xs">Veteran</Badge></div>
+        </div>
+      </div>
+      {/* Nav */}
+      <nav style={{flex:1,padding:'10px 8px',display:'flex',flexDirection:'column',gap:2,overflowY:'auto'}}>
+        {nav.map(n=>{
+          const active=page===n.id;
+          return (
+            <button key={n.id} onClick={()=>setPage(n.id)} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:8,background:active?'rgba(99,102,241,0.15)':'transparent',border:active?'1px solid rgba(99,102,241,0.25)':'1px solid transparent',color:active?T.indigoHov:T.fg3,cursor:'pointer',fontSize:13,fontWeight:active?600:500,textAlign:'left',position:'relative',transition:'all 0.15s',width:'100%'}}
+              onMouseEnter={e=>{if(!active)e.currentTarget.style.background='rgba(255,255,255,0.04)';}}
+              onMouseLeave={e=>{if(!active)e.currentTarget.style.background='transparent';}}>
+              <IconEl stroke="currentColor" size={16}>{n.icon}</IconEl>
+              <span style={{flex:1}}>{n.label}</span>
+              {n.badge>0 && <span style={{background:T.indigo,color:'#fff',borderRadius:99,fontSize:10,fontWeight:700,padding:'1px 6px',minWidth:18,textAlign:'center'}}>{n.badge}</span>}
+            </button>
+          );
+        })}
+      </nav>
+      {/* Points bar */}
+      <div style={{padding:'12px 16px',borderTop:`1px solid ${T.border}`}}>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:5}}>
+          <span style={{color:T.fg3,fontWeight:500}}>320 pts · Gold</span>
+          <span style={{color:T.fg3}}>180 to Platinum</span>
+        </div>
+        <div style={{height:4,background:'rgba(255,255,255,0.07)',borderRadius:99,overflow:'hidden'}}>
+          <div style={{height:'100%',width:'53%',background:'linear-gradient(90deg,#6366f1,#818cf8)',borderRadius:99}}/>
+        </div>
+      </div>
+      {/* Logout */}
+      <div style={{padding:'0 8px 12px'}}>
+        <a href="index.html" style={{display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:8,color:T.fg3,textDecoration:'none',fontSize:13,fontWeight:500,transition:'all 0.15s'}}
+          onMouseEnter={e=>{e.currentTarget.style.background='rgba(239,68,68,0.08)';e.currentTarget.style.color='#fca5a5';}}
+          onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color=T.fg3;}}>
+          <IconEl stroke="currentColor" size={16}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></IconEl>
+          Sign out
+        </a>
+      </div>
+    </div>
+  );
+}
+
+/* ─── TOPBAR ─── */
+function TopBar({title,subtitle}) {
+  return (
+    <div style={{height:58,borderBottom:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 24px',flexShrink:0}}>
+      <div>
+        <div style={{fontSize:15,fontWeight:700,color:T.fg1,letterSpacing:'-0.01em'}}>{title}</div>
+        {subtitle && <div style={{fontSize:11,color:T.fg3,marginTop:1}}>{subtitle}</div>}
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:6}}>
+        <div style={{fontFamily:'DM Mono,monospace',fontSize:11,color:T.fg3,background:'rgba(255,255,255,0.04)',border:`1px solid ${T.border}`,borderRadius:6,padding:'3px 10px'}}>
+          {new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
+        </div>
+        <Avatar initials="JS" size={32}/>
+      </div>
+    </div>
+  );
+}
+
+/* ─── STAT CARD ─── */
+function StatCard({label,value,sub,accent='indigo',icon}) {
+  const colors={indigo:{bg:T.indigoFaint,b:'rgba(99,102,241,0.2)',c:'#a5b4fc'},teal:{bg:T.tealFaint,b:'rgba(20,184,166,0.2)',c:'#5eead4'},green:{bg:T.greenFaint,b:'rgba(34,197,94,0.2)',c:'#86efac'},amber:{bg:'rgba(245,158,11,0.1)',b:'rgba(245,158,11,0.2)',c:'#fcd34d'}};
+  const col=colors[accent]||colors.indigo;
+  return (
+    <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:'18px 20px',flex:1,minWidth:150}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
+        <div style={{fontSize:11,fontWeight:600,color:T.fg3,textTransform:'uppercase',letterSpacing:'0.06em'}}>{label}</div>
+        <div style={{width:34,height:34,borderRadius:9,background:col.bg,border:`1px solid ${col.b}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <IconEl stroke={col.c} size={16}>{icon}</IconEl>
+        </div>
+      </div>
+      <div style={{fontSize:'1.6rem',fontWeight:700,color:T.fg1,letterSpacing:'-0.03em',lineHeight:1}}>{value}</div>
+      <div style={{fontSize:11,color:T.fg3,marginTop:5}}>{sub}</div>
+    </div>
+  );
+}
+
+/* ─── HOME PAGE ─── */
+function HomePage({setPage,setChat}) {
+  const active=ORDERS.filter(o=>!['COMPLETED','CANCELLED','REFUNDED'].includes(o.status));
+  return (
+    <div style={{flex:1,overflowY:'auto',padding:'24px'}}>
+      {/* Stats */}
+      <div style={{display:'flex',gap:12,marginBottom:24,flexWrap:'wrap'}}>
+        <StatCard label="Active Orders" value="3" sub="2 awaiting your action" accent="indigo" icon={<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></>}/>
+        <StatCard label="Bids Received" value="4" sub="on 1 open order" accent="teal" icon={<><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></>}/>
+        <StatCard label="Completed" value="2" sub="all time" accent="green" icon={<><polyline points="20 6 9 17 4 12"/></>}/>
+        <StatCard label="Points" value="320" sub="Gold tier · 180 to Platinum" accent="amber" icon={<><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></>}/>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 340px',gap:16}}>
+        {/* Recent Orders */}
+        <div>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:700,color:T.fg1}}>Active Orders</div>
+            <button onClick={()=>setPage('my-orders')} style={{background:'none',border:'none',color:T.indigo,fontSize:12,cursor:'pointer',fontWeight:600}}>View all →</button>
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {active.map(o=>(
+              <div key={o.id} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:'14px 16px',cursor:'pointer',transition:'all 0.15s'}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(99,102,241,0.3)';e.currentTarget.style.background=T.cardHov;}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.background=T.card;}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+                  <div style={{flex:1,minWidth:0,paddingRight:12}}>
+                    <div style={{fontSize:13,fontWeight:600,color:T.fg1,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{o.title}</div>
+                    <div style={{fontSize:11,color:T.fg3}}>{o.subject} · {o.level} · {o.pages} pages</div>
+                  </div>
+                  {statusBadge(o.status)}
+                </div>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <div style={{display:'flex',gap:12}}>
+                    <span style={{fontSize:11,color:T.fg3}}>Due {o.deadline}</span>
+                    {o.status==='BIDDING' && <span style={{fontSize:11,color:T.indigoHov,fontWeight:600}}>{o.bids} bids received</span>}
+                  </div>
+                  <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                    <span style={{fontSize:13,fontWeight:700,color:T.fg1}}>{o.price}</span>
+                    {o.status==='IN_PROGRESS' && <button onClick={e=>{e.stopPropagation();setChat(o);}} style={{background:T.indigoFaint,border:`1px solid rgba(99,102,241,0.25)`,borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:600,color:'#a5b4fc',cursor:'pointer'}}>Chat</button>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right panel */}
+        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+          {/* Quick actions */}
+          <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:'16px'}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.fg2,marginBottom:12}}>Quick Actions</div>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              {[{label:'Post a new order',sub:'Get bids from writers',accent:T.indigo,page:'new-order'},
+                {label:'Review bids',sub:'4 new bids on Hamlet',accent:'#22c55e',page:'my-orders'},
+                {label:'View leaderboard',sub:'You\'re ranked #3',accent:T.amber,page:'leaderboard'}].map(a=>(
+                <button key={a.label} onClick={()=>setPage(a.page)} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:8,background:'rgba(255,255,255,0.03)',border:`1px solid ${T.border}`,cursor:'pointer',textAlign:'left',transition:'all 0.15s'}}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.15)';}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;}}>
+                  <div style={{width:6,height:6,borderRadius:99,background:a.accent,flexShrink:0}}/>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:600,color:T.fg1}}>{a.label}</div>
+                    <div style={{fontSize:10,color:T.fg3}}>{a.sub}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent notifs */}
+          <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:'16px'}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.fg2,marginBottom:12}}>Latest Notifications</div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {NOTIFS.slice(0,3).map(n=>(
+                <div key={n.id} style={{display:'flex',gap:8,alignItems:'flex-start'}}>
+                  {!n.read && <div style={{width:6,height:6,background:T.indigo,borderRadius:99,flexShrink:0,marginTop:4}}/>}
+                  {n.read && <div style={{width:6,flexShrink:0}}/>}
+                  <div>
+                    <div style={{fontSize:11,color:n.read?T.fg3:T.fg2,lineHeight:1.4}}>{n.text}</div>
+                    <div style={{fontSize:10,color:T.fg4,marginTop:2}}>{n.time}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── NEW ORDER ─── */
+const SUBJECTS=['English Literature','Business Administration','Chemistry','Environmental Science','Economics','Psychology','Mathematics','Computer Science'];
+const SERVICES=['Essay','Research Paper','Business Report','Lab Report','Annotated Bibliography','Case Study','Dissertation Chapter'];
+const LEVELS=['High School','Undergraduate','Masters','PhD'];
+const CITATIONS=['None','APA','MLA','Harvard','Chicago'];
+
+function NewOrderPage({setPage}) {
+  const [step,setStep]=useState(1);
+  const [form,setForm]=useState({subject:'',service:'',level:'',citation:'',title:'',instructions:'',pages:'',deadline:''});
+  const upd=k=>e=>setForm(f=>({...f,[k]:e.target.value}));
+  const inp={width:'100%',background:'rgba(255,255,255,0.05)',border:`1px solid ${T.border}`,borderRadius:8,padding:'11px 14px',color:'#fff',fontSize:13,outline:'none',transition:'border-color 0.15s'};
+  const sel={...inp,color:form.subject?'#fff':T.fg3};
+
+  const submit=e=>{e.preventDefault();setStep(3);};
+
+  if(step===3) return (
+    <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:'2rem'}}>
+      <div style={{textAlign:'center',maxWidth:400}}>
+        <div style={{width:64,height:64,background:'rgba(34,197,94,0.12)',border:'1px solid rgba(34,197,94,0.25)',borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px'}}>
+          <IconEl stroke="#86efac" size={28}><polyline points="20 6 9 17 4 12"/></IconEl>
+        </div>
+        <h2 style={{fontSize:'1.25rem',fontWeight:700,marginBottom:8}}>Order posted successfully!</h2>
+        <p style={{fontSize:13,color:T.fg3,lineHeight:1.6,marginBottom:24}}>Your order is now live. Verified writers matching your subject will start placing bids shortly. You'll receive notifications as bids come in.</p>
+        <div style={{display:'flex',gap:10,justifyContent:'center'}}>
+          <button onClick={()=>{setStep(1);setForm({subject:'',service:'',level:'',citation:'',title:'',instructions:'',pages:'',deadline:''});}} style={{padding:'10px 20px',borderRadius:8,background:T.indigo,color:'#fff',border:'none',fontSize:13,fontWeight:600,cursor:'pointer'}}>Post another</button>
+          <button onClick={()=>setPage('my-orders')} style={{padding:'10px 20px',borderRadius:8,background:'rgba(255,255,255,0.06)',color:T.fg1,border:`1px solid ${T.border}`,fontSize:13,fontWeight:600,cursor:'pointer'}}>My Orders</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{flex:1,overflowY:'auto',padding:'24px',display:'flex',justifyContent:'center'}}>
+      <div style={{width:'100%',maxWidth:620}}>
+        {/* Steps indicator */}
+        <div style={{display:'flex',alignItems:'center',gap:0,marginBottom:28}}>
+          {['Assignment details','Instructions & files'].map((s,i)=>(
+            <React.Fragment key={s}>
+              <div style={{display:'flex',alignItems:'center',gap:8,flex:1}}>
+                <div style={{width:26,height:26,borderRadius:99,background:step>i+1?T.green:step===i+1?T.indigo:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:step>=i+1?'#fff':T.fg4,flexShrink:0,transition:'background 0.2s'}}>
+                  {step>i+1?'✓':i+1}
+                </div>
+                <span style={{fontSize:12,fontWeight:600,color:step===i+1?T.fg1:T.fg4}}>{s}</span>
+              </div>
+              {i===0 && <div style={{height:1,flex:1,background:step>1?T.indigo:T.border,margin:'0 8px',transition:'background 0.3s'}}/>}
+            </React.Fragment>
+          ))}
+        </div>
+
+        <form onSubmit={submit}>
+          {step===1 && (
+            <div style={{display:'flex',flexDirection:'column',gap:16}}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+                {[['Subject',SUBJECTS,'subject'],['Service type',SERVICES,'service']].map(([label,opts,key])=>(
+                  <div key={key}>
+                    <label style={{display:'block',fontSize:11,fontWeight:600,color:T.fg3,marginBottom:5}}>{label}</label>
+                    <select value={form[key]} onChange={upd(key)} required style={{...sel,color:form[key]?'#fff':T.fg3}}>
+                      <option value="">Select…</option>
+                      {opts.map(o=><option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+                {[['Academic level',LEVELS,'level'],['Citation style',CITATIONS,'citation']].map(([label,opts,key])=>(
+                  <div key={key}>
+                    <label style={{display:'block',fontSize:11,fontWeight:600,color:T.fg3,marginBottom:5}}>{label}</label>
+                    <select value={form[key]} onChange={upd(key)} required style={{...sel,color:form[key]?'#fff':T.fg3}}>
+                      <option value="">Select…</option>
+                      {opts.map(o=><option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <label style={{display:'block',fontSize:11,fontWeight:600,color:T.fg3,marginBottom:5}}>Topic / Title</label>
+                <input value={form.title} onChange={upd('title')} placeholder="e.g. Critical Analysis of Hamlet Act III" required style={inp}
+                  onFocus={e=>e.target.style.borderColor=T.indigo} onBlur={e=>e.target.style.borderColor=T.border}/>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+                <div>
+                  <label style={{display:'block',fontSize:11,fontWeight:600,color:T.fg3,marginBottom:5}}>Number of pages</label>
+                  <input type="number" min="1" value={form.pages} onChange={upd('pages')} placeholder="e.g. 5" required style={inp}
+                    onFocus={e=>e.target.style.borderColor=T.indigo} onBlur={e=>e.target.style.borderColor=T.border}/>
+                </div>
+                <div>
+                  <label style={{display:'block',fontSize:11,fontWeight:600,color:T.fg3,marginBottom:5}}>Preferred deadline</label>
+                  <input type="date" value={form.deadline} onChange={upd('deadline')} required style={inp}
+                    onFocus={e=>e.target.style.borderColor=T.indigo} onBlur={e=>e.target.style.borderColor=T.border}/>
+                </div>
+              </div>
+              <button type="button" onClick={()=>setStep(2)} style={{padding:'12px',borderRadius:8,background:T.indigo,color:'#fff',border:'none',fontSize:14,fontWeight:600,cursor:'pointer',marginTop:4}}>Continue →</button>
+            </div>
+          )}
+          {step===2 && (
+            <div style={{display:'flex',flexDirection:'column',gap:16}}>
+              <div>
+                <label style={{display:'block',fontSize:11,fontWeight:600,color:T.fg3,marginBottom:5}}>Detailed instructions <span style={{color:T.fg4}}>(min. 50 characters)</span></label>
+                <textarea value={form.instructions} onChange={upd('instructions')} placeholder="Describe your assignment, what you expect, any specific requirements from your professor…" required minLength={50} rows={6} style={{...inp,resize:'vertical',fontFamily:'DM Sans,sans-serif'}}
+                  onFocus={e=>e.target.style.borderColor=T.indigo} onBlur={e=>e.target.style.borderColor=T.border}/>
+                <div style={{fontSize:10,color:T.fg4,marginTop:3,textAlign:'right'}}>{form.instructions.length} chars</div>
+              </div>
+              <div style={{background:'rgba(99,102,241,0.06)',border:`1px solid rgba(99,102,241,0.18)`,borderRadius:10,padding:'14px 16px'}}>
+                <div style={{fontSize:12,fontWeight:600,color:'#a5b4fc',marginBottom:4}}>File attachments</div>
+                <div style={{fontSize:11,color:T.fg3}}>Attach rubrics, lecture notes, or previous work to help your writer. (Uploading disabled in demo.)</div>
+              </div>
+              <div style={{display:'flex',gap:10,marginTop:4}}>
+                <button type="button" onClick={()=>setStep(1)} style={{flex:1,padding:'12px',borderRadius:8,background:'rgba(255,255,255,0.05)',color:T.fg1,border:`1px solid ${T.border}`,fontSize:14,fontWeight:600,cursor:'pointer'}}>← Back</button>
+                <button type="submit" style={{flex:2,padding:'12px',borderRadius:8,background:T.indigo,color:'#fff',border:'none',fontSize:14,fontWeight:600,cursor:'pointer'}}>Post Order</button>
+              </div>
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MY ORDERS ─── */
+function MyOrdersPage({setChat}) {
+  const [filter,setFilter]=useState('all');
+  const [expanded,setExpanded]=useState(null);
+  const filters=[['all','All'],['active','Active'],['COMPLETED','Completed']];
+  const visible=ORDERS.filter(o=>{
+    if(filter==='active') return !['COMPLETED','CANCELLED','REFUNDED'].includes(o.status);
+    if(filter==='COMPLETED') return o.status==='COMPLETED';
+    return true;
+  });
+  return (
+    <div style={{flex:1,overflowY:'auto',padding:'24px'}}>
+      <div style={{display:'flex',gap:6,marginBottom:16}}>
+        {filters.map(([v,l])=>(
+          <button key={v} onClick={()=>setFilter(v)} style={{padding:'6px 14px',borderRadius:999,fontSize:12,fontWeight:600,border:'none',cursor:'pointer',transition:'all 0.15s',background:filter===v?T.indigo:'rgba(255,255,255,0.05)',color:filter===v?'#fff':T.fg3}}>
+            {l}
+          </button>
+        ))}
+        <div style={{marginLeft:'auto',fontSize:12,color:T.fg3,display:'flex',alignItems:'center'}}>{visible.length} orders</div>
+      </div>
+
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {visible.map(o=>{
+          const open=expanded===o.id;
+          return (
+            <div key={o.id} style={{background:T.card,border:`1px solid ${open?'rgba(99,102,241,0.3)':T.border}`,borderRadius:12,overflow:'hidden',transition:'border-color 0.2s'}}>
+              <div style={{padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',gap:12}} onClick={()=>setExpanded(open?null:o.id)}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,color:T.fg1,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{o.title}</div>
+                  <div style={{fontSize:11,color:T.fg3}}>{o.id} · {o.subject} · {o.pages} pages · {o.citation}</div>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+                  {statusBadge(o.status)}
+                  <span style={{fontSize:13,fontWeight:700,color:T.fg1}}>{o.price}</span>
+                  <IconEl stroke={T.fg4} size={14}><polyline points={open?'18 15 12 9 6 15':'6 9 12 15 18 9'}/></IconEl>
+                </div>
+              </div>
+              {open && (
+                <div style={{borderTop:`1px solid ${T.border}`,padding:'14px 16px',background:'rgba(255,255,255,0.02)'}}>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:14}}>
+                    {[['Deadline',o.deadline],['Level',o.level],['Citation',o.citation],['Created',o.created]].map(([k,v])=>(
+                      <div key={k}><div style={{fontSize:10,color:T.fg4,marginBottom:2,textTransform:'uppercase',letterSpacing:'0.05em'}}>{k}</div><div style={{fontSize:12,fontWeight:600,color:T.fg2}}>{v}</div></div>
+                    ))}
+                  </div>
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                    {o.status==='BIDDING' && <button style={{padding:'7px 14px',borderRadius:7,background:T.indigo,color:'#fff',border:'none',fontSize:12,fontWeight:600,cursor:'pointer'}}>Review {o.bids} Bids</button>}
+                    {o.status==='IN_PROGRESS' && <button onClick={()=>setChat(o)} style={{padding:'7px 14px',borderRadius:7,background:T.indigoFaint,color:'#a5b4fc',border:'1px solid rgba(99,102,241,0.25)',fontSize:12,fontWeight:600,cursor:'pointer'}}>Open Chat</button>}
+                    {o.status==='UNDER_REVIEW' && <><button style={{padding:'7px 14px',borderRadius:7,background:'rgba(34,197,94,0.15)',color:'#86efac',border:'1px solid rgba(34,197,94,0.25)',fontSize:12,fontWeight:600,cursor:'pointer'}}>Accept &amp; Download</button><button style={{padding:'7px 14px',borderRadius:7,background:T.yellowFaint,color:'#fde047',border:'1px solid rgba(234,179,8,0.25)',fontSize:12,fontWeight:600,cursor:'pointer'}}>Request Revision</button></>}
+                    {o.status==='COMPLETED' && <button style={{padding:'7px 14px',borderRadius:7,background:T.greenFaint,color:'#86efac',border:'1px solid rgba(34,197,94,0.25)',fontSize:12,fontWeight:600,cursor:'pointer'}}>Leave Review</button>}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─── NOTIFICATIONS ─── */
+function NotificationsPage({notifs,markRead}) {
+  const iconMap={bid:'#818cf8',submit:'#fde047',info:'#5eead4',complete:'#86efac'};
+  return (
+    <div style={{flex:1,overflowY:'auto',padding:'24px'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+        <div style={{fontSize:12,color:T.fg3}}>{notifs.filter(n=>!n.read).length} unread</div>
+        <button onClick={markRead} style={{background:'none',border:'none',color:T.indigo,fontSize:12,cursor:'pointer',fontWeight:600}}>Mark all read</button>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {notifs.map(n=>(
+          <div key={n.id} style={{background:n.read?T.card:'rgba(99,102,241,0.06)',border:`1px solid ${n.read?T.border:'rgba(99,102,241,0.18)'}`,borderRadius:12,padding:'14px 16px',display:'flex',gap:12,alignItems:'flex-start',transition:'all 0.2s'}}>
+            <div style={{width:8,height:8,borderRadius:99,background:n.read?'transparent':T.indigo,marginTop:5,flexShrink:0,border:n.read?`1px solid ${T.fg4}`:'none'}}/>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,color:n.read?T.fg3:T.fg1,lineHeight:1.5}}>{n.text}</div>
+              <div style={{fontSize:11,color:T.fg4,marginTop:4}}>{n.time}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── LEADERBOARD ─── */
+const tierVariant={Bronze:'amber',Silver:'gray',Gold:'gold',Platinum:'teal',Elite:'purple'};
+const tenureVariant={Veteran:'indigo','Half Year':'teal',Quarterly:'green','1 Month':'blue',New:'gray'};
+
+function LeaderboardPage() {
+  return (
+    <div style={{flex:1,overflowY:'auto',padding:'24px'}}>
+      <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,overflow:'hidden'}}>
+        <div style={{padding:'14px 20px',borderBottom:`1px solid ${T.border}`,display:'grid',gridTemplateColumns:'40px 1fr 80px 70px 80px',gap:12,fontSize:11,fontWeight:700,color:T.fg4,textTransform:'uppercase',letterSpacing:'0.06em'}}>
+          <span>#</span><span>Student</span><span style={{textAlign:'center'}}>Points</span><span style={{textAlign:'center'}}>Tier</span><span style={{textAlign:'center'}}>Orders</span>
+        </div>
+        {LEADERBOARD.map(u=>(
+          <div key={u.rank} style={{padding:'12px 20px',borderBottom:`1px solid ${T.border}`,display:'grid',gridTemplateColumns:'40px 1fr 80px 70px 80px',gap:12,alignItems:'center',background:u.isMe?'rgba(99,102,241,0.07)':'transparent',transition:'background 0.15s'}}
+            onMouseEnter={e=>{if(!u.isMe)e.currentTarget.style.background='rgba(255,255,255,0.02)';}}
+            onMouseLeave={e=>{if(!u.isMe)e.currentTarget.style.background='transparent';}}>
+            <div style={{fontSize:14,fontWeight:700,color:u.rank<=3?T.amber:T.fg4,textAlign:'center'}}>{u.rank<=3?['🥇','🥈','🥉'][u.rank-1]:u.rank}</div>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <Avatar initials={u.name.split(' ').map(x=>x[0]).join('').slice(0,2)} size={32} gradient={u.isMe?'135deg,#6366f1,#818cf8':'135deg,#374151,#4b5563'}/>
+              <div>
+                <div style={{fontSize:13,fontWeight:u.isMe?700:500,color:u.isMe?T.indigoHov:T.fg1}}>{u.name}</div>
+                <Badge variant={tenureVariant[u.tenure]||'gray'} size="xs">{u.tenure}</Badge>
+              </div>
+            </div>
+            <div style={{fontSize:14,fontWeight:700,color:T.fg1,textAlign:'center'}}>{u.points.toLocaleString()}</div>
+            <div style={{textAlign:'center'}}><Badge variant={tierVariant[u.tier]||'gray'} size="xs">{u.tier}</Badge></div>
+            <div style={{fontSize:13,color:T.fg3,textAlign:'center'}}>{u.orders}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── APP ─── */
+function App() {
+  const [page,setPage]=useState('home');
+  const [chat,setChat]=useState(null);
+  const [notifs,setNotifs]=useState(NOTIFS);
+  const unread=notifs.filter(n=>!n.read).length;
+  const markRead=()=>setNotifs(n=>n.map(x=>({...x,read:true})));
+
+  const titles={home:['Overview','Welcome back, Jane'],
+    'new-order':['New Order','Fill in your assignment details'],
+    'my-orders':['My Orders','Track all your assignments'],
+    notifications:['Notifications','Stay up to date'],
+    leaderboard:['Leaderboard','Student rankings']};
+
+  const [ti,sub]=titles[page]||['Dashboard',''];
+
+  return (
+    <div style={{display:'flex',height:'100%'}}>
+      <Sidebar page={page} setPage={setPage} notifCount={unread}/>
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        <TopBar title={ti} subtitle={sub}/>
+        {page==='home' && <HomePage setPage={setPage} setChat={setChat}/>}
+        {page==='new-order' && <NewOrderPage setPage={setPage}/>}
+        {page==='my-orders' && <MyOrdersPage setChat={setChat}/>}
+        {page==='notifications' && <NotificationsPage notifs={notifs} markRead={markRead}/>}
+        {page==='leaderboard' && <LeaderboardPage/>}
+      </div>
+      {chat && <ChatPanel orderId={chat.id} orderTitle={chat.title} writerName="James R." onClose={()=>setChat(null)}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

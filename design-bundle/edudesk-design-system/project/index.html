@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduDesk — Academic Writing Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',ui-sans-serif,system-ui,sans-serif;background:#111827;color:#fff;line-height:1.6;overflow-x:hidden}
+
+/* ── HEADER ── */
+header{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.06);transition:background 0.3s ease;backdrop-filter:blur(12px);background:rgba(17,24,39,0.85)}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:34px;height:34px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:#fff;letter-spacing:-0.5px;flex-shrink:0}
+.logo-text{font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:-0.3px}
+nav{display:flex;align-items:center;gap:2rem}
+nav a{text-decoration:none;font-size:0.875rem;font-weight:500;color:#9ca3af;transition:color 0.15s}
+nav a:hover{color:#fff}
+.header-btns{display:flex;gap:10px;align-items:center}
+.btn-ghost{padding:8px 18px;border-radius:6px;font-size:0.875rem;font-weight:600;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,0.18);transition:all 0.15s;background:transparent;cursor:pointer}
+.btn-ghost:hover{background:rgba(255,255,255,0.07)}
+.btn-primary{padding:8px 18px;border-radius:6px;font-size:0.875rem;font-weight:600;text-decoration:none;background:#6366f1;color:#fff;border:none;transition:all 0.15s;cursor:pointer}
+.btn-primary:hover{background:#818cf8}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:100px 2rem 60px;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(99,102,241,0.18) 0%,transparent 70%);pointer-events:none}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;mask-image:radial-gradient(ellipse 80% 80% at 50% 0%,black 40%,transparent 100%)}
+.hero-content{position:relative;max-width:780px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:99px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);font-size:0.8rem;font-weight:600;color:#a5b4fc;margin-bottom:2rem;letter-spacing:0.02em}
+.hero-badge-dot{width:6px;height:6px;background:#6366f1;border-radius:99px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.4)}}
+.hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:700;line-height:1.1;letter-spacing:-0.03em;margin-bottom:1.25rem;text-wrap:balance}
+.hero h1 .accent{background:linear-gradient(135deg,#a5b4fc,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:1.125rem;color:#9ca3af;max-width:560px;margin:0 auto 2.5rem;line-height:1.65}
+.hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.cta-primary{padding:14px 28px;border-radius:8px;background:#6366f1;color:#fff;font-weight:600;font-size:1rem;text-decoration:none;transition:all 0.2s;box-shadow:0 4px 24px rgba(99,102,241,0.35);border:none;cursor:pointer}
+.cta-primary:hover{background:#818cf8;transform:translateY(-1px);box-shadow:0 8px 32px rgba(99,102,241,0.45)}
+.cta-secondary{padding:14px 28px;border-radius:8px;background:rgba(255,255,255,0.05);color:#e5e7eb;font-weight:600;font-size:1rem;text-decoration:none;border:1px solid rgba(255,255,255,0.15);transition:all 0.2s;cursor:pointer}
+.cta-secondary:hover{background:rgba(255,255,255,0.09)}
+.hero-stats{display:flex;gap:3rem;justify-content:center;margin-top:4rem;padding-top:3rem;border-top:1px solid rgba(255,255,255,0.08);flex-wrap:wrap}
+.hero-stat{}
+.hero-stat-num{font-size:2rem;font-weight:700;color:#fff;letter-spacing:-0.03em}
+.hero-stat-lbl{font-size:0.82rem;color:#6b7280;margin-top:2px}
+
+/* ── SECTIONS SHARED ── */
+section{padding:80px 2rem}
+.section-inner{max-width:1100px;margin:0 auto}
+.section-label{font-size:0.78rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#6366f1;margin-bottom:0.75rem}
+.section-title{font-size:clamp(1.8rem,3.5vw,2.5rem);font-weight:700;letter-spacing:-0.025em;line-height:1.2;color:#fff;margin-bottom:1rem;text-wrap:balance}
+.section-sub{font-size:1.05rem;color:#9ca3af;max-width:540px;line-height:1.6}
+
+/* ── HOW IT WORKS ── */
+#how-it-works{background:#0f1724}
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px;margin-top:3.5rem;background:rgba(255,255,255,0.06);border-radius:16px;overflow:hidden}
+.step{background:#111827;padding:2.5rem 2rem;position:relative}
+.step:first-child{border-radius:16px 0 0 16px}
+.step:last-child{border-radius:0 16px 16px 0}
+.step-num{font-size:0.75rem;font-weight:700;color:#6366f1;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem}
+.step-icon{width:44px;height:44px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem}
+.step-icon svg{width:22px;height:22px;stroke:#818cf8;fill:none;stroke-width:1.8}
+.step h3{font-size:1rem;font-weight:600;color:#fff;margin-bottom:0.5rem}
+.step p{font-size:0.875rem;color:#6b7280;line-height:1.6}
+.step-connector{display:none}
+
+/* ── FOR STUDENTS / WRITERS ── */
+.roles-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5px;margin-top:3.5rem;background:rgba(255,255,255,0.06);border-radius:16px;overflow:hidden}
+@media(max-width:700px){.roles-grid{grid-template-columns:1fr}}
+.role-card{background:#111827;padding:3rem 2.5rem}
+.role-card:first-child{border-radius:16px 0 0 16px}
+.role-card:last-child{border-radius:0 16px 16px 16px}
+.role-tag{display:inline-block;padding:4px 12px;border-radius:99px;font-size:0.75rem;font-weight:600;margin-bottom:1.5rem;letter-spacing:0.04em}
+.role-tag.student{background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.25)}
+.role-tag.writer{background:rgba(20,184,166,0.12);color:#5eead4;border:1px solid rgba(20,184,166,0.25)}
+.role-card h3{font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:0.75rem}
+.role-card p{font-size:0.9rem;color:#6b7280;margin-bottom:1.75rem;line-height:1.6}
+.feature-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:2rem}
+.feature-list li{display:flex;align-items:flex-start;gap:10px;font-size:0.875rem;color:#9ca3af}
+.feature-list li::before{content:'';width:18px;height:18px;background:rgba(99,102,241,0.2);border-radius:99px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23818cf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='3 8 6.5 11.5 13 4.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center;background-size:12px}
+.role-card .cta-primary{display:inline-block;font-size:0.875rem;padding:10px 22px}
+.writer-check::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%235eead4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='3 8 6.5 11.5 13 4.5'/%3E%3C/svg%3E") !important;background-color:rgba(20,184,166,0.12) !important}
+
+/* ── TRUST BANNER ── */
+.trust-banner{background:rgba(99,102,241,0.07);border-top:1px solid rgba(99,102,241,0.12);border-bottom:1px solid rgba(99,102,241,0.12);padding:48px 2rem}
+.trust-grid{display:flex;justify-content:center;gap:4rem;flex-wrap:wrap;max-width:900px;margin:0 auto}
+.trust-item{text-align:center}
+.trust-item-num{font-size:2.25rem;font-weight:700;color:#fff;letter-spacing:-0.04em}
+.trust-item-label{font-size:0.8rem;color:#6b7280;margin-top:4px}
+
+/* ── ESCROW / SAFETY ── */
+#safety{background:#0f1724}
+.safety-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;margin-top:3.5rem}
+@media(max-width:750px){.safety-grid{grid-template-columns:1fr}}
+.safety-visual{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:2rem;display:flex;flex-direction:column;gap:1rem}
+.escrow-step{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)}
+.escrow-step-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.escrow-step-icon svg{width:18px;height:18px;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.escrow-step-text{}
+.escrow-step-title{font-size:0.85rem;font-weight:600;color:#fff}
+.escrow-step-sub{font-size:0.78rem;color:#6b7280}
+.safety-points{display:flex;flex-direction:column;gap:1.5rem}
+.safety-point h4{font-size:0.95rem;font-weight:600;color:#fff;margin-bottom:4px}
+.safety-point p{font-size:0.875rem;color:#6b7280;line-height:1.6}
+
+/* ── ABOUT ── */
+#about{padding:80px 2rem}
+.about-inner{max-width:760px;margin:0 auto;text-align:center}
+.about-inner .section-title{margin-bottom:1.25rem}
+.about-inner p{font-size:1.05rem;color:#9ca3af;line-height:1.7;margin-bottom:1.25rem}
+.team-cards{display:flex;gap:1rem;justify-content:center;margin-top:2.5rem;flex-wrap:wrap}
+.team-card{background:#1f2937;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:1.25rem 1.5rem;text-align:center;min-width:140px}
+.team-avatar{width:48px;height:48px;border-radius:99px;background:linear-gradient(135deg,#6366f1,#818cf8);margin:0 auto 0.75rem;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;color:#fff}
+.team-name{font-size:0.875rem;font-weight:600;color:#fff}
+.team-role{font-size:0.75rem;color:#6b7280;margin-top:2px}
+
+/* ── CONTACT ── */
+#contact{background:#0f1724}
+.contact-inner{max-width:560px;margin:0 auto;text-align:center}
+.contact-inner .section-title{margin-bottom:0.75rem}
+.contact-inner p{color:#6b7280;margin-bottom:2.5rem}
+.contact-form{display:flex;flex-direction:column;gap:1rem;text-align:left}
+.contact-form input,.contact-form textarea{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px 16px;color:#fff;font-family:inherit;font-size:0.9rem;outline:none;transition:border-color 0.15s;resize:none}
+.contact-form input::placeholder,.contact-form textarea::placeholder{color:#4b5563}
+.contact-form input:focus,.contact-form textarea:focus{border-color:#6366f1}
+.contact-form button{background:#6366f1;color:#fff;border:none;padding:13px;border-radius:8px;font-size:0.95rem;font-weight:600;cursor:pointer;transition:background 0.15s;font-family:inherit}
+.contact-form button:hover{background:#818cf8}
+
+/* ── FOOTER ── */
+footer{padding:40px 2rem;border-top:1px solid rgba(255,255,255,0.07)}
+.footer-inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.footer-links{display:flex;gap:2rem}
+.footer-links a{font-size:0.82rem;color:#4b5563;text-decoration:none;transition:color 0.15s}
+.footer-links a:hover{color:#9ca3af}
+.footer-copy{font-size:0.8rem;color:#374151}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  nav{display:none}
+  .hero-stats{gap:2rem}
+  .steps-grid{grid-template-columns:1fr}
+  .step:first-child,.step:last-child{border-radius:0}
+  .step:first-child{border-radius:16px 16px 0 0}
+  .step:last-child{border-radius:0 0 16px 16px}
+  .trust-grid{gap:2rem}
+  .footer-inner{flex-direction:column;text-align:center}
+  .footer-links{justify-content:center}
+  section{padding:60px 1.25rem}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <a href="/" class="logo">
+    <div class="logo-mark">Ed</div>
+    <span class="logo-text">EduDesk</span>
+  </a>
+  <nav>
+    <a href="#how-it-works">How it works</a>
+    <a href="#for-you">For students &amp; writers</a>
+    <a href="#safety">Escrow &amp; safety</a>
+    <a href="#about">About</a>
+    <a href="#contact">Contact</a>
+  </nav>
+  <div class="header-btns">
+    <a href="sign-in.html" class="btn-ghost">Sign in</a>
+    <a href="sign-up.html" class="btn-primary">Get started</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      Academic Writing Marketplace
+    </div>
+    <h1>Where students find <span class="accent">expert writers</span>, not shortcuts</h1>
+    <p>Post your assignment, receive competitive bids from verified writers, and pay only when you're satisfied — with every payment held in escrow.</p>
+    <div class="hero-ctas">
+      <a href="sign-up.html?role=student" class="cta-primary">Post an order free</a>
+      <a href="sign-up.html?role=writer" class="cta-secondary">Apply as a writer</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num">10,000+</div>
+        <div class="hero-stat-lbl">Orders completed</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">2,400+</div>
+        <div class="hero-stat-lbl">Verified writers</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">98%</div>
+        <div class="hero-stat-lbl">Satisfaction rate</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">50+</div>
+        <div class="hero-stat-lbl">Academic subjects</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+  <div class="section-inner">
+    <div class="section-label">Simple process</div>
+    <h2 class="section-title">From order to delivery in four steps</h2>
+    <p class="section-sub">A structured workflow so nothing slips through the cracks — from posting your brief to downloading the final file.</p>
+
+    <div class="steps-grid">
+      <div class="step">
+        <div class="step-num">Step 01</div>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <h3>Post your order</h3>
+        <p>Describe your assignment, set your deadline, choose your subject and academic level. Takes under 3 minutes.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">Step 02</div>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+        </div>
+        <h3>Writers bid</h3>
+        <p>Approved, subject-verified writers submit competitive bids with price, timeline, and a short pitch. You pick the best fit.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">Step 03</div>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <h3>Payment held in escrow</h3>
+        <p>Once you select a writer, funds are held securely. The writer only gets paid after you approve the completed work.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">Step 04</div>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h3>Review &amp; approve</h3>
+        <p>Download a watermarked preview, request revisions if needed (up to 3 included), then accept to release payment.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOR STUDENTS / WRITERS -->
+<section id="for-you" style="background:#111827;">
+  <div class="section-inner">
+    <div class="section-label">For everyone</div>
+    <h2 class="section-title">Built for students. Built for writers.</h2>
+
+    <div class="roles-grid">
+      <!-- STUDENT -->
+      <div class="role-card">
+        <div class="role-tag student">For Students</div>
+        <h3>Get expert help on any assignment</h3>
+        <p>Post once, receive multiple bids from qualified writers. Compare profiles, ratings, and prices — then choose with confidence.</p>
+        <ul class="feature-list">
+          <li>All subjects from STEM to Humanities</li>
+          <li>Essays, reports, dissertations, and more</li>
+          <li>Secure escrow — pay only when satisfied</li>
+          <li>In-app chat with your chosen writer</li>
+          <li>Up to 3 free revisions included</li>
+          <li>Dispute resolution if something goes wrong</li>
+        </ul>
+        <a href="sign-up.html?role=student" class="cta-primary">Post your first order free</a>
+      </div>
+      <!-- WRITER -->
+      <div class="role-card">
+        <div class="role-tag writer">For Writers</div>
+        <h3>Earn by doing what you do best</h3>
+        <p>Apply once, get approved, and start bidding on orders that match your expertise. Build your reputation and climb the leaderboard.</p>
+        <ul class="feature-list writer-check">
+          <li class="writer-check">Select subjects you specialise in</li>
+          <li class="writer-check">Set your own prices and deadlines</li>
+          <li class="writer-check">Earn points and unlock tier badges</li>
+          <li class="writer-check">Build a profile with sample work</li>
+          <li class="writer-check">Transparent earnings dashboard</li>
+          <li class="writer-check">Protected by platform dispute system</li>
+        </ul>
+        <a href="sign-up.html?role=writer" class="cta-primary" style="background:rgba(20,184,166,0.2);color:#5eead4;box-shadow:none;border:1px solid rgba(20,184,166,0.3)">Apply as a writer</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST BANNER -->
+<div class="trust-banner">
+  <div class="trust-grid">
+    <div class="trust-item">
+      <div class="trust-item-num">Escrow</div>
+      <div class="trust-item-label">Payments held until you approve</div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-item-num">Verified</div>
+      <div class="trust-item-label">Writers reviewed before approval</div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-item-num">Protected</div>
+      <div class="trust-item-label">Dispute resolution on every order</div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-item-num">Private</div>
+      <div class="trust-item-label">Watermarked previews, no leaks</div>
+    </div>
+  </div>
+</div>
+
+<!-- SAFETY / ESCROW -->
+<section id="safety">
+  <div class="section-inner">
+    <div class="safety-grid">
+      <div>
+        <div class="section-label">Buyer protection</div>
+        <h2 class="section-title">Your money is safe — always</h2>
+        <p class="section-sub" style="margin-bottom:2rem;">Funds never go directly to the writer. Everything passes through our escrow system, so you're protected at every step.</p>
+        <div class="safety-points">
+          <div class="safety-point">
+            <h4>Escrow-held payments</h4>
+            <p>Your payment is locked the moment you select a writer. It's only released when you click "Accept" — not before.</p>
+          </div>
+          <div class="safety-point">
+            <h4>Revision protection</h4>
+            <p>Not happy? Request up to 3 free revisions before you're asked to make a final decision.</p>
+          </div>
+          <div class="safety-point">
+            <h4>Dispute resolution</h4>
+            <p>If you can't resolve things directly, open a dispute. Our team reviews the full chat log, files, and revision history to decide fairly.</p>
+          </div>
+        </div>
+      </div>
+      <div class="safety-visual">
+        <div class="escrow-step">
+          <div class="escrow-step-icon" style="background:rgba(99,102,241,0.15)">
+            <svg stroke="#818cf8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          </div>
+          <div class="escrow-step-text">
+            <div class="escrow-step-title">Payment captured</div>
+            <div class="escrow-step-sub">Student selects writer, funds held</div>
+          </div>
+        </div>
+        <div style="text-align:center;color:#374151;font-size:1.2rem">↓</div>
+        <div class="escrow-step">
+          <div class="escrow-step-icon" style="background:rgba(234,179,8,0.12)">
+            <svg stroke="#fde047" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div class="escrow-step-text">
+            <div class="escrow-step-title">Work submitted</div>
+            <div class="escrow-step-sub">Writer uploads, watermarked preview shown</div>
+          </div>
+        </div>
+        <div style="text-align:center;color:#374151;font-size:1.2rem">↓</div>
+        <div class="escrow-step">
+          <div class="escrow-step-icon" style="background:rgba(34,197,94,0.12)">
+            <svg stroke="#86efac" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="escrow-step-text">
+            <div class="escrow-step-title">Student approves</div>
+            <div class="escrow-step-sub">Payment released to writer after commission</div>
+          </div>
+        </div>
+        <div style="text-align:center;color:#374151;font-size:1.2rem">↓</div>
+        <div class="escrow-step">
+          <div class="escrow-step-icon" style="background:rgba(239,68,68,0.12)">
+            <svg stroke="#fca5a5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+          <div class="escrow-step-text">
+            <div class="escrow-step-title">Dispute / Refund</div>
+            <div class="escrow-step-sub">Admin reviews &amp; decides outcome fairly</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT US -->
+<section id="about">
+  <div class="about-inner">
+    <div class="section-label">About us</div>
+    <h2 class="section-title">Built to be fair to both sides</h2>
+    <p>EduDesk is an academic writing marketplace built to solve a real problem: students struggle to find reliable, subject-qualified help, and skilled writers have no transparent platform to find work.</p>
+    <p>We built EduDesk to fix that — with verified writers, escrow-protected payments, structured order workflows, and a dispute system that treats both parties fairly.</p>
+    <p>This is a university project built with Next.js, PostgreSQL, and real-world architectural patterns — but designed to handle real users from day one.</p>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-inner">
+    <div class="section-label">Get in touch</div>
+    <h2 class="section-title">Contact us</h2>
+    <p>Have a question, feedback, or just want to say hello? We'd love to hear from you.</p>
+    <form class="contact-form" onsubmit="handleContact(event)">
+      <input type="text" placeholder="Your name" required/>
+      <input type="email" placeholder="Email address" required/>
+      <textarea rows="4" placeholder="Your message…" required></textarea>
+      <button type="submit" id="contact-btn">Send message</button>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <a href="/" class="footer-logo">
+      <div class="logo-mark" style="width:28px;height:28px;font-size:12px">Ed</div>
+      <span style="font-size:0.95rem;font-weight:700;color:#6b7280">EduDesk</span>
+    </a>
+    <div class="footer-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+      <a href="sign-in.html">Sign in</a>
+      <a href="sign-up.html">Sign up</a>
+    </div>
+    <div class="footer-copy">© 2025 EduDesk. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+function handleContact(e){
+  e.preventDefault();
+  const btn = document.getElementById('contact-btn');
+  btn.textContent = 'Message sent!';
+  btn.style.background = '#10b981';
+  setTimeout(()=>{btn.textContent='Send message';btn.style.background='';e.target.reset();},3000);
+}
+
+// Smooth header background on scroll
+window.addEventListener('scroll',()=>{
+  const h = document.querySelector('header');
+  if(window.scrollY > 20) h.style.background='rgba(17,24,39,0.97)';
+  else h.style.background='rgba(17,24,39,0.85)';
+});
+</script>
+</body>
+</html>

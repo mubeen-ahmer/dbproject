@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sign In — EduDesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',ui-sans-serif,system-ui,sans-serif;background:#111827;color:#fff;min-height:100vh;display:flex;flex-direction:column}
+
+header{padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.06)}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff}
+.logo-text{font-size:1rem;font-weight:700;color:#fff}
+.signup-link{font-size:0.85rem;color:#9ca3af;text-decoration:none;transition:color 0.15s}
+.signup-link span{color:#818cf8}
+.signup-link:hover span{color:#a5b4fc}
+
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:3rem 1.5rem;position:relative;overflow:hidden}
+.bg-glow{position:absolute;top:-20%;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(99,102,241,0.12) 0%,transparent 70%);pointer-events:none}
+
+.card{width:100%;max-width:400px;position:relative}
+
+.form-heading{margin-bottom:2rem}
+.form-heading h1{font-size:1.6rem;font-weight:700;letter-spacing:-0.025em;margin-bottom:6px}
+.form-heading p{font-size:0.875rem;color:#6b7280}
+.form-heading p span{color:#818cf8;cursor:pointer}
+
+.form-group{display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem}
+.field{display:flex;flex-direction:column;gap:6px}
+.field-label{font-size:0.8rem;font-weight:600;color:#9ca3af}
+.field-row{position:relative}
+input[type=email],input[type=password]{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px 16px;color:#fff;font-family:inherit;font-size:0.9rem;outline:none;transition:border-color 0.15s,background 0.15s}
+input::placeholder{color:#4b5563}
+input:focus{border-color:#6366f1;background:rgba(99,102,241,0.05)}
+
+.forgot{font-size:0.8rem;color:#6b7280;text-decoration:none;float:right;margin-top:-2px;transition:color 0.15s}
+.forgot:hover{color:#a5b4fc}
+
+.divider{height:1px;background:rgba(255,255,255,0.07);margin:0.25rem 0 1.5rem}
+
+.error-msg{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:10px 14px;font-size:0.83rem;color:#fca5a5;display:none;margin-bottom:1rem}
+.error-msg.show{display:block}
+
+.submit-btn{width:100%;padding:13px;border-radius:8px;background:#6366f1;color:#fff;font-size:0.95rem;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;font-family:inherit;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:center;gap:8px}
+.submit-btn:hover:not(:disabled){background:#818cf8;transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,0.3)}
+.submit-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;box-shadow:none}
+.submit-btn .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:99px;animation:spin 0.7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.signup-prompt{text-align:center;font-size:0.83rem;color:#4b5563}
+.signup-prompt a{color:#818cf8;text-decoration:none}
+.signup-prompt a:hover{color:#a5b4fc}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">
+    <div class="logo-mark">Ed</div>
+    <span class="logo-text">EduDesk</span>
+  </a>
+  <a href="sign-up.html" class="signup-link">No account? <span>Sign up free</span></a>
+</header>
+
+<main>
+  <div class="bg-glow"></div>
+  <div class="card">
+
+    <div class="form-heading">
+      <h1>Welcome back</h1>
+      <p>Sign in to your EduDesk account</p>
+    </div>
+
+    <div class="error-msg" id="error-msg">Incorrect email or password. Please try again.</div>
+
+    <form onsubmit="handleSignIn(event)">
+      <div class="form-group">
+        <div class="field">
+          <label class="field-label">Email address</label>
+          <input type="email" id="email-input" placeholder="jane@university.edu" required/>
+        </div>
+        <div class="field">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <label class="field-label" style="margin:0">Password</label>
+            <a href="#" class="forgot">Forgot password?</a>
+          </div>
+          <input type="password" id="pw-input" placeholder="Your password" required/>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <button type="submit" class="submit-btn" id="submit-btn">
+        <span id="btn-text">Sign in</span>
+        <span class="spinner" id="spinner"></span>
+      </button>
+    </form>
+
+    <p class="signup-prompt">Don't have an account? <a href="sign-up.html">Create one free</a></p>
+  </div>
+</main>
+
+<script>
+function handleSignIn(e){
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  const txt = document.getElementById('btn-text');
+  const spin = document.getElementById('spinner');
+  const err = document.getElementById('error-msg');
+  const email = document.getElementById('email-input').value;
+
+  err.classList.remove('show');
+  btn.disabled = true;
+  spin.style.display = 'block';
+  txt.textContent = 'Signing in…';
+
+  setTimeout(()=>{
+    spin.style.display = 'none';
+    // Simulate: wrong email shows error, anything else "succeeds"
+    if(email.includes('wrong') || email.includes('bad')){
+      err.classList.add('show');
+      btn.disabled = false;
+      txt.textContent = 'Sign in';
+    } else {
+      txt.textContent = 'Signed in!';
+      btn.style.background = '#10b981';
+      setTimeout(()=>{ window.location.href = 'index.html'; }, 800);
+    }
+  }, 1100);
+}
+</script>
+</body>
+</html>
